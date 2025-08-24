@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>نرم افزار تحلیل بنیادی </title>
+
+  <!-- Fonts & Libs -->
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#0b1220; --panel-2:#0a0f1a; --text:#e5e7eb; --muted:#94a3b8;
+      --primary:#60a5fa; --secondary:#34d399; --danger:#f87171; --warning:#fbbf24; --ring:rgba(96,165,250,.35);
+      --border:rgba(148,163,184,.18); --calc:rgba(96,165,250,.07)
+    }
+    :root.light{ --bg:#f7fafc; --panel:#fff; --panel-2:#f8fafc; --text:#0f172a; --muted:#64748b; --border:rgba(2,6,23,.12); --calc:rgba(14,165,233,.08) }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; padding:24px; background: radial-gradient(1200px 600px at 90% -10%, #10233f 0%, transparent 60%), radial-gradient(800px 400px at -10% 10%, #121a2d 0, transparent 55%), var(--bg); color:var(--text); font-family:"Vazirmatn",system-ui,-apple-system,Segoe UI,Tahoma,sans-serif; line-height:1.65 }
+    .container{ max-width:1600px; margin:0 auto }
+    .hero{ display:grid; grid-template-columns:1.5fr 1fr auto; gap:16px; align-items:end; background:linear-gradient(145deg, rgba(96,165,250,.12), rgba(52,211,153,.08)); border:1px solid var(--border); padding:18px; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,.2) inset }
+    @media (max-width:980px){ .hero{ grid-template-columns:1fr } }
+    h1{ margin:0 0 6px; font-size:28px; font-weight:800; letter-spacing:-.2px }
+    .sub{ color:var(--muted); font-size:13px }
+    .card{ background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.24) }
+    label{ font-weight:700; font-size:12px; color:var(--muted); margin-bottom:6px; display:block }
+    input,select,button{ font:inherit }
+    .inp{ width:100%; padding:10px 12px; border-radius:12px; background:var(--panel-2); color:var(--text); border:1px solid var(--border); outline:none; transition:.15s }
+    .inp:focus{ border-color:var(--primary); box-shadow:0 0 0 6px var(--ring) }
+    .grid{ display:grid; gap:12px }
+    .grid-2{ grid-template-columns:repeat(2,minmax(0,1fr)) }
+    .grid-3{ grid-template-columns:repeat(3,minmax(0,1fr)) }
+    .grid-4{ grid-template-columns:repeat(4,minmax(0,1fr)) }
+    .grid-5{ grid-template-columns:repeat(5,minmax(0,1fr)) }
+    @media (max-width:1200px){ .grid-5{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
+    @media (max-width:980px){ .grid-2,.grid-3,.grid-4,.grid-5{ grid-template-columns:1fr } }
+    .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+    .btn{ cursor:pointer; border:none; padding:10px 14px; border-radius:12px; color:#0b1220; font-weight:800; background: #e2e8f0; }
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+    .btn.btn-primary, .btn.active{ background:linear-gradient(90deg, var(--primary), #7dd3fc) }
+    .btn.btn-green{ background:linear-gradient(90deg, var(--secondary), #a7f3d0) }
+    .btn.btn-amber{ background:linear-gradient(90deg, var(--warning), #fde68a) }
+    .btn.btn-red{ background:linear-gradient(90deg, var(--danger), #fecaca) }
+    .tabs{ display:flex; gap:10px; border-bottom:1px dashed var(--border); margin:16px 0 10px }
+    .tab{ appearance:none; background:transparent; color:var(--muted); border:none; padding:10px 14px; font-weight:800; cursor:pointer; position:relative }
+    .tab.active{ color:var(--text) }
+    .tab.active:after{ content:""; position:absolute; inset-inline:0; bottom:-1px; height:3px; background:linear-gradient(90deg, var(--primary), var(--secondary)); border-radius:3px }
+    table{ width:100%; border-collapse:collapse; font-size:13px }
+    th,td{ border-bottom:1px dashed var(--border); padding:8px; text-align:center; white-space:nowrap }
+    thead th{ position:sticky; top:0; background:var(--panel); z-index:1 }
+    .calc{ background:var(--calc); font-weight:800 }
+    .drag-handle{ cursor:grab; user-select:none; text-align:center }
+    .kpi{ display:grid; gap:12px }
+    .kpi.grid-4{ grid-template-columns:repeat(4,minmax(0,1fr)) }
+    .kpi.grid-5{ grid-template-columns:repeat(5,minmax(0,1fr)) }
+    .kpi .box{ background:var(--panel-2); border:1px solid var(--border); border-radius:14px; padding:14px; text-align:center }
+    .kpi .title{ color:var(--muted); font-size:12px; font-weight:800 }
+    .kpi .val{ font-weight:900; font-size:22px; margin-top:6px; direction:ltr }
+    .note{ font-size:12px; color:var(--muted) }
+    .toast{ position:fixed; inset-inline:0; bottom:20px; margin:auto; width:max-content; background:var(--panel); border:1px solid var(--border); color:var(--text); padding:12px 16px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,.35); opacity:0; transform:translateY(6px); transition:.25s }
+    .toast.show{ opacity:1; transform:translateY(0) }
+
+    /* ---- Gauge & Chart ---- */
+    .gauge{ display:flex; flex-direction:column; gap:8px; align-items:center; background:var(--panel-2); border:1px solid var(--border); border-radius:14px; padding:12px }
+    .gauge svg{ width:160px; height:100px }
+    .spark{ width:100%; height:36px }
+    .chart-container { position: relative; height: 450px; width: 100%; background: var(--panel-2); padding: 10px; border-radius: 12px;}
+    .toggle-group { display:flex; gap: 8px; border: 1px solid var(--border); padding: 4px; border-radius: 10px; }
+    .toggle-group .btn { padding: 6px 10px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div>
+        <h1 id="title">  تحلیل جامع بنیادی</h1>
+      </div>
+      <div class="grid grid-3">
+        <div>
+          <label for="companyName">نام شرکت</label>
+          <input id="companyName" class="inp" placeholder="مثلاً: پتروشیمی نمونه" value="شرکت نمونه" />
+        </div>
+        <div>
+          <label for="fiscalYear">سال مالی پایه</label>
+          <input id="fiscalYear" class="inp" type="text" inputmode="decimal" value="1402" />
+        </div>
+        <div>
+          <label for="fiscalYearStart">شروع سال مالی</label>
+          <select id="fiscalYearStart" class="inp"></select>
+        </div>
+      </div>
+      <div class="toolbar" style="flex-direction: column; align-items: stretch;">
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-amber" id="btn-import" style="flex:1;">بارگذاری (JSON)</button>
+            <button class="btn btn-primary" id="btn-export" style="flex:1;">خروجی (JSON)</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-green" id="btn-export-all-xlsx" style="flex:1;">خروجی Excel</button>
+            <button class="btn" id="btn-theme" style="flex:1;">تم</button>
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept="application/json,.json" hidden />
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="inputs">ورودی‌ها و مفروضات</button>
+      <button class="tab" data-tab="results">نتایج و تحلیل‌ها</button>
+      <button class="tab" data-tab="ratios">نسبت‌ها (گیج و روند)</button>
+      <button class="tab" data-tab="midterm">میان‌دوره‌ای و فروش ماهانه</button>
+    </div>
+
+    <!-- INPUTS TAB -->
+    <section id="inputs" class="card">
+        <div class="grid grid-3">
+            <div>
+                <label for="dollarRate">نرخ دلار (ریال)</label>
+                <input id="dollarRate" class="inp" type="text" inputmode="decimal" value="50000" />
+            </div>
+            <div>
+                <label for="dollarGrowthRate">نرخ رشد سالانه دلار (%)</label>
+                <input id="dollarGrowthRate" class="inp" type="text" inputmode="decimal" value="10" />
+            </div>
+            <div>
+                <label for="taxRate">نرخ مالیات (%)</label>
+                <input id="taxRate" class="inp" type="text" inputmode="decimal" value="25" />
+            </div>
+            <div>
+                <label for="discountRate">نرخ تنزیل (WACC) (%)</label>
+                <input id="discountRate" class="inp" type="text" inputmode="decimal" value="30" />
+            </div>
+            <div>
+                <label for="peRatio">نسبت قیمت به درآمد (P/E)</label>
+                <input id="peRatio" class="inp" type="text" inputmode="decimal" value="7" />
+            </div>
+            <div>
+                <label for="evEbitdaMultiple">EV/EBITDA (Multiple)</label>
+                <input id="evEbitdaMultiple" class="inp" type="text" inputmode="decimal" value="5" />
+            </div>
+        </div>
+
+        <h3 style="margin:20px 0 10px">صورت سود و زیان تاریخی</h3>
+        <div class="toolbar" style="margin-bottom:6px">
+            <button class="btn btn-green" id="addYear">افزودن سال</button>
+            <button class="btn btn-red" id="removeYear">حذف سال</button>
+            <button class="btn btn-green" id="addPnlItem">افزودن آیتم</button>
+            <button class="btn btn-red" id="removePnlItem">حذف آیتم</button>
+            <button class="btn btn-primary" id="pastePnlData">دریافت از کلیپ‌بورد</button>
+            <button class="btn btn-amber" id="exportHistoricalCsv">CSV</button>
+        </div>
+        <div id="historical" class="card" style="background:var(--panel-2)"></div>
+        <div class="note" style="margin-top:6px">برای استفاده از 'دریافت از کلیپ‌بورد'، ابتدا ردیف‌های قابل ویرایش را از اکسل کپی کنید.</div>
+
+        <h3 style="margin:20px 0 10px">ترازنامه تاریخی (برای نسبت‌ها)</h3>
+        <div class="toolbar" style="margin-bottom:6px">
+            <button class="btn btn-green" id="addBsItem">افزودن آیتم</button>
+            <button class="btn btn-red" id="removeBsItem">حذف آیتم</button>
+            <button class="btn btn-amber" id="exportHistoricalBsCsv">CSV</button>
+        </div>
+        <div id="historicalBalance" class="card" style="background:var(--panel-2)"></div>
+        <div class="note" style="margin-top:6px">داده‌های آخرین سال این جدول به عنوان مبنای محاسبه نسبت‌های سال پایه پیش‌بینی استفاده می‌شود.</div>
+
+
+        <h3 style="margin:26px 0 10px">مفروضات درآمد فروش</h3>
+        <div class="toolbar" style="margin-bottom:6px">
+            <button class="btn btn-green" id="addRevenue">افزودن محصول</button>
+            <button class="btn btn-red" id="removeRevenue">حذف محصول</button>
+            <button class="btn btn-amber" id="exportRevenueCsv">CSV</button>
+        </div>
+        <div id="revenue" class="card" style="background:var(--panel-2)"></div>
+
+        <h3 style="margin:26px 0 10px">مفروضات بهای تمام‌شده</h3>
+        <div class="toolbar" style="margin-bottom:6px">
+            <button class="btn btn-green" id="addCogs">افزودن ماده اولیه</button>
+            <button class="btn btn-red" id="removeCogs">حذف ماده اولیه</button>
+            <button class="btn btn-amber" id="exportCogsCsv">CSV</button>
+        </div>
+        <div id="cogs" class="card" style="background:var(--panel-2)"></div>
+
+        <div class="grid grid-2" style="margin-top:16px">
+            <div>
+                <h3 style="margin:0 0 10px">دستمزد مستقیم</h3>
+                <div class="toolbar" style="margin-bottom:6px">
+                    <button class="btn btn-green" id="addLabor">افزودن ردیف</button>
+                    <button class="btn btn-red" id="removeLabor">حذف ردیف</button>
+                    <button class="btn btn-amber" id="exportLaborCsv">CSV</button>
+                </div>
+                <div id="labor" class="card" style="background:var(--panel-2)"></div>
+            </div>
+            <div>
+                <h3 style="margin:0 0 10px">سربار تولید</h3>
+                <div class="toolbar" style="margin-bottom:6px">
+                    <button class="btn btn-green" id="addOverhead">افزودن ردیف</button>
+                    <button class="btn btn-red" id="removeOverhead">حذف ردیف</button>
+                    <button class="btn btn-amber" id="exportOverheadCsv">CSV</button>
+                </div>
+                <div id="overhead" class="card" style="background:var(--panel-2)"></div>
+            </div>
+        </div>
+
+        <h3 style="margin:26px 0 10px">موجودی‌ها</h3>
+        <div class="toolbar" style="margin-bottom:6px">
+            <button class="btn btn-amber" id="exportInventoryCsv">CSV</button>
+        </div>
+        <div id="inventory" class="card" style="background:var(--panel-2)"></div>
+
+        <h3 style="margin:26px 0 10px">سایر درآمدها و هزینه‌ها</h3>
+        <div class="toolbar" style="margin-bottom:6px">
+            <button class="btn btn-amber" id="exportOthersCsv">CSV</button>
+        </div>
+        <div id="others" class="card" style="background:var(--panel-2)"></div>
+    </section>
+
+    <!-- RESULTS TAB -->
+    <section id="results" class="card" hidden>
+      <div class="kpi grid-3">
+        <div class="box">
+          <div class="title">ارزشگذاری DCF (میلیون ریال)</div>
+          <div id="dcfValuation" class="val">0</div>
+        </div>
+        <div class="box">
+          <div class="title">ارزشگذاری P/E (میلیون ریال)</div>
+          <div id="peValuation" class="val">0</div>
+        </div>
+        <div class="box">
+          <div class="title">ارزشگذاری EV/EBITDA (میلیون ریال)</div>
+          <div id="evEbitdaValuation" class="val">0</div>
+        </div>
+      </div>
+
+      <h3 style="margin:22px 0 10px">نسبت‌های کلیدی مالی (سال پایه پیش‌بینی)</h3>
+      <div class="kpi grid-5">
+        <div class="box">
+          <div class="title">حاشیه سود خالص (%)</div>
+          <div id="profitMargin" class="val">0</div>
+        </div>
+        <div class="box">
+          <div class="title">دوره وصول مطالبات (روز)</div>
+          <div id="dso" class="val">0</div>
+        </div>
+        <div class="box">
+          <div class="title">دوره گردش کالا (روز)</div>
+          <div id="inventoryDays" class="val">0</div>
+        </div>
+        <div class="box">
+            <div class="title">نسبت بدهی به دارایی (%)</div>
+            <div id="debtAssetRatio" class="val">0</div>
+        </div>
+        <div class="box">
+          <div class="title">نسبت مطالبات به دارایی (%)</div>
+          <div id="receivablesAssetRatio" class="val">0</div>
+        </div>
+      </div>
+
+      <h3 style="margin:22px 0 10px">تحلیل حساسیت سود خالص سال پایه (میلیون ریال)</h3>
+      <div class="grid grid-2" id="sensitivity-tables"></div>
+
+      <div id="pe-valuation-section" style="margin-top:22px;"></div>
+
+      <h3 style="margin:22px 0 10px">صورت سود و زیان پیش‌بینی (میلیون ریال)</h3>
+      <div class="toolbar" style="margin-bottom:6px">
+        <button class="btn btn-amber" id="exportProjectionCsv">CSV</button>
+      </div>
+      <div id="projection" class="card" style="background:var(--panel-2)"></div>
+    </section>
+
+    <!-- RATIOS TAB -->
+    <section id="ratios" class="card" hidden>
+      <div class="grid grid-4">
+        <div class="gauge">
+          <div class="title">حاشیه سود خالص (روند + گیج)</div>
+          <div id="gauge-profit"></div>
+          <canvas id="spark-profit" class="spark"></canvas>
+        </div>
+        <div class="gauge">
+          <div class="title">دوره وصول مطالبات (روز)</div>
+          <div id="gauge-dso"></div>
+          <canvas id="spark-dso" class="spark"></canvas>
+        </div>
+        <div class="gauge">
+          <div class="title">دوره گردش موجودی (روز)</div>
+          <div id="gauge-inv"></div>
+          <canvas id="spark-inv" class="spark"></canvas>
+        </div>
+        <div class="gauge">
+          <div class="title">مطالبات/دارایی (%)</div>
+          <div id="gauge-rcv"></div>
+          <canvas id="spark-rcv" class="spark"></canvas>
+        </div>
+      </div>
+      <div class="note" style="margin-top:10px">منابع: صورت‌های تاریخی + سال پایهٔ پیش‌بینی. (نمودار کوچک: روند چندساله)</div>
+      
+      <h3 style="margin:22px 0 10px">تحلیل فروش ماهانه (میلیون ریال)</h3>
+      <div class="toolbar" style="margin-bottom:10px; justify-content: space-between;">
+        <div id="sales-chart-years" style="display:flex; gap: 15px; flex-wrap: wrap;">
+            <!-- Year checkboxes will be injected here -->
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <div class="toggle-group" id="sales-chart-view-toggle">
+                <button class="btn active" data-view="monthly">ماهانه</button>
+                <button class="btn" data-view="cumulative">تجمعی</button>
+            </div>
+            <div class="toggle-group" id="sales-chart-type-toggle">
+                <button class="btn active" data-type="bar">ستونی</button>
+                <button class="btn" data-type="line">خطی</button>
+            </div>
+        </div>
+      </div>
+      <div class="chart-container">
+          <canvas id="sales-chart"></canvas>
+      </div>
+    </section>
+
+    <!-- MIDTERM TAB -->
+    <section id="midterm" class="card" hidden>
+      <div class="grid grid-3">
+        <div>
+          <label>ماه‌های سپری‌شده از سال مالی</label>
+          <input id="mid-months" class="inp" type="text" inputmode="decimal" value="6" />
+        </div>
+        <div>
+          <label>سود خالص میان‌دوره‌ای (میلیون ریال)</label>
+          <input id="mid-net" class="inp" type="text" inputmode="decimal" value="5000" />
+        </div>
+        <div>
+          <label>سایر درآمدها (تحقق‌یافته تا امروز)</label>
+          <input id="mid-other-real" class="inp" type="text" inputmode="decimal" value="800" />
+        </div>
+        <div>
+          <label>فروش تحقق‌یافته تا امروز (محاسباتی)</label>
+          <input id="mid-sales-ytd" class="inp" type="text" inputmode="decimal" value="40000" readonly />
+        </div>
+        <div>
+          <label>سایر درآمدهای انتظاری باقیمانده سال</label>
+          <input id="mid-other-expected" class="inp" type="text" inputmode="decimal" value="0" />
+        </div>
+        <div>
+          <label>حاشیه سود خالص برآوردی تحلیلگر (%) — اختیاری</label>
+          <input id="mid-analyst-npm" class="inp" type="text" inputmode="decimal" placeholder="جایگزین محاسبه خودکار می‌شود" />
+        </div>
+      </div>
+
+      <h3 style="margin:20px 0 10px">فروش ماهانه (میلیون ریال)</h3>
+      <div class="toolbar" style="margin-bottom:10px">
+        <button class="btn btn-green" id="addSalesYear">افزودن سال</button>
+        <button class="btn btn-red" id="removeSalesYear">حذف سال</button>
+        <button class="btn btn-amber" id="exportMonthlyCsv">CSV</button>
+      </div>
+      <div id="monthlySalesContainer" class="card" style="background:var(--panel-2)"></div>
+
+      <h3 style="margin:20px 0 10px">برآورد سودآوری سال جاری</h3>
+      <div class="grid grid-5 kpi">
+        <div class="box"><div class="title">میانگین فروش ماهانه</div><div id="mid-avg-sale" class="val">0</div></div>
+        <div class="box"><div class="title">فروش برآوردی پایان سال</div><div id="mid-est-full-sale" class="val">0</div></div>
+        <div class="box"><div class="title">حاشیه سود خالص واقعی (%)</div><div id="mid-true-npm" class="val">0</div></div>
+        <div class="box"><div class="title">سود خالص برآوردی (بدون سایر)</div><div id="mid-est-net-core" class="val">0</div></div>
+        <div class="box"><div class="title">سود خالص نهایی (با سایر)</div><div id="mid-est-net-final" class="val">0</div></div>
+      </div>
+      
+      <h3 style="margin:20px 0 10px">تحلیل روند فروش سال جاری</h3>
+       <div class="grid grid-3 kpi">
+        <div class="box"><div class="title">فروش ماه آخر/میانگین (%)</div><div id="sales-analysis-mom" class="val">0</div></div>
+        <div class="box"><div class="title">رشد تجمعی (نسبت به پارسال) (%)</div><div id="sales-analysis-yoy" class="val">0</div></div>
+        <div class="box"><div class="title">تحقق فروش در مدت مشابه پارسال (%)</div><div id="sales-analysis-py-realized" class="val">0</div></div>
+      </div>
+
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // -------- Utilities --------
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const toFa = (n, frac=0) => isFinite(n) ? Number(n).toLocaleString('fa-IR',{maximumFractionDigits:frac}) : '-';
+    const toEn = v => String(v ?? '').replace(/٬|,/g,'').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    const num = v => { const x = parseFloat(toEn(v)); return isFinite(x) ? x : 0 };
+    const debounce = (fn, ms=120)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms) } };
+    const notify = (msg,tone='ok')=>{ const t=$('#toast'); t.textContent=msg; t.style.borderColor=tone==='err'?'var(--danger)':tone==='warn'?'var(--warning)':'var(--border)'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200) };
+    const saveTheme = ()=> localStorage.setItem('valutian-theme', document.documentElement.classList.contains('light')?'light':'dark');
+    const loadTheme = ()=>{ const s=localStorage.getItem('valutian-theme'); if(s==='light') document.documentElement.classList.add('light') };
+
+    // -------- Data (State) --------
+    const PERSIAN_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+    let fiscalYearStartMonth = 1; // 1 = Farvardin
+    let salesChartInstance = null;
+    let salesChartView = 'monthly';
+    let salesChartType = 'bar';
+    
+    let pnlTemplate = [
+      { id:'sales', name:'درآمد فروش', type:'income', editable:true, draggable:true },
+      { id:'cogs', name:'بهای تمام‌شده', type:'expense', editable:true, draggable:true },
+      { id:'gross_profit', name:'سود ناخالص', type:'subtotal', editable:false, draggable:false },
+      { id:'other_op_income', name:'سایر درآمدهای عملیاتی', type:'income', editable:true, draggable:true },
+      { id:'opex', name:'هزینه‌های فروش، اداری و عمومی', type:'expense', editable:true, draggable:true },
+      { id:'depr_amort', name:'استهلاک و اندوخته', type:'expense', editable:true, draggable:true },
+      { id:'other_op_expense', name:'سایر هزینه‌های عملیاتی', type:'expense', editable:true, draggable:true },
+      { id:'op_profit', name:'سود عملیاتی (EBIT)', type:'subtotal', editable:false, draggable:false },
+      { id:'non_op_income_expense', name:'خالص سایر درآمد/هزینه غیرعملیاتی', type:'income', editable:true, draggable:true },
+      { id:'finance_cost', name:'هزینه مالی', type:'expense', editable:true, draggable:true },
+      { id:'ebt', name:'سود قبل از مالیات', type:'subtotal', editable:false, draggable:false },
+      { id:'tax', name:'مالیات', type:'expense', editable:true, draggable:true },
+      { id:'net_profit', name:'سود خالص', type:'total', editable:false, draggable:false },
+      { id:'ebitda', name:'EBITDA', type:'calc_line', editable:false, draggable:false },
+    ];
+    let historicalBalanceTemplate = [
+        { key:'accountsReceivable', name:'حساب‌های دریافتنی', removable: false },
+        { key:'inventoryBeginning', name:'موجودی اول دوره', removable: false },
+        { key:'inventoryEnding', name:'موجودی پایان دوره', removable: false },
+        { key:'totalDebt', name:'جمع بدهی‌ها', removable: false },
+        { key:'totalAssets', name:'جمع دارایی‌ها', removable: false },
+    ];
+    let historicalData = [
+      { year:'1400', values:{ sales:74000000, cogs:44400000, opex:11100000, depr_amort:1200000, finance_cost:500000, tax:4500000 } },
+      { year:'1401', values:{ sales:88800000, cogs:55000000, opex:13000000, depr_amort:1400000, finance_cost:600000, tax:5500000 } },
+    ];
+    let historicalBalanceData = [
+      { year:'1400', accountsReceivable:12000, inventoryBeginning:900, inventoryEnding:1100, totalDebt:40000, totalAssets:100000 },
+      { year:'1401', accountsReceivable:15000, inventoryBeginning:1000, inventoryEnding:1200, totalDebt:50000, totalAssets:120000 },
+    ];
+    let revenueData = [
+      { name:'پلی اتیلن', domesticVol:500, domesticUnit:'ton', domesticPrice:100000, exportVol:200, exportUnit:'ton', exportPriceUSD:1200, growth:5, priceGrowth:0 },
+      { name:'اتیلن',     domesticVol:300, domesticUnit:'ton', domesticPrice:80000,  exportVol:100, exportUnit:'ton', exportPriceUSD:950,  growth:3, priceGrowth:0 },
+    ];
+    let cogsData = [ { name:'اتان', consumption:1.2, price:20000, unit:'rial/kg', inflation:4 } ];
+    let directLaborData = [ { name:'دستمزد مستقیم', cost:3000, inflation:35 } ];
+    let overheadData = [ { name:'سربار تولید', cost:5000, inflation:30 } ];
+    let inventoryData = { beginning:1200, ending:1500, unabsorbed:50, growth:10 };
+    let otherProjectionsData = [
+      { id:'other_op_income', base:250,  growth:10 },
+      { id:'opex', base:13000, growth:25 },
+      { id:'depr_amort', base:1400,   growth:10 },
+      { id:'other_op_expense', base:120,   growth:15 },
+      { id:'non_op_income_expense', base:-30, growth:0 },
+      { id:'finance_cost', base:600,   growth:20 },
+    ];
+    let monthlySalesData = {
+      '1402': [6000, 6200, 6500, 7000, 7100, 7200, 0, 0, 0, 0, 0, 0],
+      '1401': [5000, 5100, 5300, 5800, 5900, 6000, 6100, 6300, 6500, 6800, 7000, 7200]
+    };
+    let midterm = { months:6, netYTD:5000, otherYTD:800, salesYTD:40000, otherRemain:0, analystNPM:null };
+    const salesUnits = [
+      { value:'ton', text:'تن' },{ value:'kg', text:'کیلوگرم' },{ value:'number', text:'عدد' },{ value:'device', text:'دستگاه' },{ value:'liter', text:'لیتر' },{ value:'m3', text:'متر مکعب' },{ value:'thousand_number', text:'هزار عدد' },{ value:'package', text:'بسته' },{ value:'vane', text:'پره' },{ value:'mw', text:'مگا وات' },{ value:'kw', text:'کیلو وات' },{ value:'mva', text:'مگا ولت آمپر' },{ value:'thousand_meter', text:'هزار متر' },{ value:'set', text:'ست' },{ value:'m2', text:'متر مربع' },{ value:'bottle', text:'بطری' },{ value:'hundred_number', text:'صد عددی' },{ value:'head', text:'رأس' }
+    ];
+    let lastProjections = [];
+
+    // -------- Core Accounting & Finance --------
+    const getLatestBalanceSheet = () => {
+        return historicalBalanceData.slice().sort((a, b) => b.year.localeCompare(a.year))[0] || 
+               { accountsReceivable:0, inventoryBeginning:0, inventoryEnding:0, totalDebt:0, totalAssets:0 };
+    };
+
+    function calculatePnl(values){
+      const res = { ...values };
+      res.gross_profit = (res.sales||0) - (res.cogs||0);
+      let op = res.gross_profit;
+      pnlTemplate.forEach(item => {
+        if(item.type==='income' && !['sales','non_op_income_expense'].includes(item.id)) op += (res[item.id]||0);
+        if(item.type==='expense' && !['cogs','tax','finance_cost'].includes(item.id)) op -= (res[item.id]||0);
+      });
+      res.op_profit = op;
+      res.ebitda = res.op_profit + (res.depr_amort || 0);
+      res.ebt = res.op_profit + (res.non_op_income_expense||0) - (res.finance_cost||0);
+      res.net_profit = res.ebt - (res.tax||0);
+      return res;
+    }
+
+    // -------- Projection Engine --------
+    function calculateProjections(overrides={}){
+      let dollarRate = overrides.dollarRate ?? num($('#dollarRate').value);
+      const dollarGrowth = num($('#dollarGrowthRate').value)/100;
+      const taxRate = num($('#taxRate').value)/100;
+      const baseYear = parseInt(toEn($('#fiscalYear').value)) || 1402;
+
+      const rev = JSON.parse(JSON.stringify(revenueData));
+      const cgs = JSON.parse(JSON.stringify(cogsData));
+      const lab = JSON.parse(JSON.stringify(directLaborData));
+      const ovh = JSON.parse(JSON.stringify(overheadData));
+      const inv = JSON.parse(JSON.stringify(inventoryData));
+      const oth = JSON.parse(JSON.stringify(otherProjectionsData));
+
+      if(overrides.cogsIndex !== undefined && overrides.cogsPriceChange !== undefined && cgs[overrides.cogsIndex]){
+          cgs[overrides.cogsIndex].price *= (1 + overrides.cogsPriceChange);
+      }
+
+      const list = [];
+      for(let i=0;i<5;i++){
+        const pnl = {};
+        let totalBaseUnits = 0;
+        let totalSales = 0;
+
+        rev.forEach((p, index)=>{
+          let priceFactor = 1;
+          if (overrides.productIndex === index && overrides.productPriceChange !== undefined) {
+              priceFactor = 1 + overrides.productPriceChange;
+          }
+          const growthFactor = 1 + (p.growth/100);
+          const domesticMultiplier = p.domesticUnit === 'ton' ? 1000 : 1;
+          const exportMultiplier = p.exportUnit === 'ton' ? 1000 : 1;
+          const domesticRevenue = p.domesticVol * domesticMultiplier * p.domesticPrice * priceFactor;
+          const exportRevenue = p.exportVol * exportMultiplier * p.exportPriceUSD * dollarRate * priceFactor;
+          totalSales += domesticRevenue + exportRevenue;
+          totalBaseUnits += (p.domesticVol * domesticMultiplier) + (p.exportVol * exportMultiplier);
+          p.domesticVol *= growthFactor;
+          p.exportVol *= growthFactor;
+          const priceGrowthFactor = 1 + (p.priceGrowth / 100);
+          p.domesticPrice *= priceGrowthFactor;
+          p.exportPriceUSD *= priceGrowthFactor;
+        });
+        pnl.sales = (totalSales/1_000_000) * (overrides.totalSalesMultiplier || 1);
+
+        let material=0;
+        cgs.forEach(m=>{
+          let rpk = m.price;
+          if(m.unit==='usd/kg') rpk = m.price * dollarRate;
+          else if(m.unit==='rial/ton') rpk = m.price/1000;
+          else if(m.unit==='usd/ton') rpk = (m.price*dollarRate)/1000;
+          material += totalBaseUnits * m.consumption * rpk;
+          m.price *= 1 + (m.inflation/100);
+        });
+
+        let labor = 0; lab.forEach(x=>{ labor+=x.cost; x.cost*=1+(x.inflation/100) });
+        let overhead = 0; ovh.forEach(x=>{ overhead+=x.cost; x.cost*=1+(x.inflation/100) });
+
+        const costOfProduction = (material/1_000_000) + labor + overhead;
+        pnl.cogs = costOfProduction + inv.beginning - inv.ending + inv.unabsorbed;
+        inv.beginning*=1+(inv.growth/100); inv.ending*=1+(inv.growth/100); inv.unabsorbed*=1+(inv.growth/100);
+
+        oth.forEach(it=>{ 
+            const template = pnlTemplate.find(p => p.id === it.id);
+            if (template) {
+                pnl[it.id] = it.base; 
+                it.base *= 1 + (it.growth / 100);
+            }
+        });
+
+        const pnlBeforeTax = calculatePnl(pnl);
+        pnlBeforeTax.tax = pnlBeforeTax.ebt > 0 ? pnlBeforeTax.ebt*taxRate : 0;
+        const finalPnl = calculatePnl(pnlBeforeTax);
+        list.push({ year: baseYear + i, ...finalPnl });
+
+        dollarRate *= 1 + dollarGrowth;
+      }
+      return list;
+    }
+
+    function getDcfValuation(projections, discountRate){
+        if(!projections || projections.length === 0) return 0;
+        return projections.reduce((acc,p,idx)=> acc + p.net_profit/Math.pow(1+discountRate, idx+1), 0);
+    }
+
+    // -------- Rendering --------
+    function renderFiscalYearStart() {
+        $('#fiscalYearStart').innerHTML = PERSIAN_MONTHS.map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
+        $('#fiscalYearStart').value = fiscalYearStartMonth;
+    }
+
+    function renderHistorical(){
+      const yearsInputs = historicalData.map((y,idx)=>`<th><input class="inp" value="${y.year}" data-i="${idx}" data-f="year" /></th>`).join('');
+      let html = `<div style="overflow:auto"><table id="historicalTable"><thead><tr><th style="text-align:center">⠿</th><th>سرفصل (میلیون ریال)</th>${yearsInputs}<th>وضعیت</th></tr></thead><tbody id="historicalTbody">`;
+      const calcAll = historicalData.map(d => calculatePnl(d.values));
+      pnlTemplate.forEach((item)=>{
+        html += `<tr data-id="${item.id}" data-draggable="${item.draggable}">`+
+          `<td class="drag-handle" title="Drag">${item.draggable? '⠿':''}</td>`+
+          `<td>${item.name}</td>`+
+          calcAll.map((calc, i)=>{
+            if(item.editable){
+              const val = historicalData[i].values[item.id] ?? '';
+              return `<td><input class="inp" type="text" inputmode="decimal" style="min-width:120px" data-i="${i}" data-f="${item.id}" value="${val}" /></td>`;
+            } else {
+              return `<td class="calc">${toFa(calc[item.id])}</td>`;
+            }
+          }).join('')+
+          `<td>${item.editable? '<span class="note">(قابل ویرایش)</span>' : '<span class="note">محاسباتی</span>'}</td>`+
+          `</tr>`;
+      });
+      html += `</tbody></table></div>`;
+      $('#historical').innerHTML = html;
+      new Sortable($('#historicalTbody'), {
+        handle: '.drag-handle', animation:150,
+        filter: 'tr[data-draggable="false"]',
+        onEnd: ()=>{
+          const newOrder = $$('#historicalTbody tr').map(tr=> tr.dataset.id);
+          pnlTemplate.sort((a,b)=> newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+          renderHistorical(); runModel();
+        }
+      });
+    }
+
+    function renderHistoricalBalance(){
+      const headerYears = historicalData.map(y => `<th>${y.year}</th>`).join('');
+      const mapYearIndex = year => historicalData.findIndex(h => h.year === year);
+      const ensure = ()=>{
+        historicalData.forEach(h => {
+          if(!historicalBalanceData.find(b => b.year === h.year)){
+            historicalBalanceData.push({ year:h.year });
+          }
+        });
+        historicalBalanceData = historicalBalanceData.filter(b => mapYearIndex(b.year) !== -1).sort((a,b)=> mapYearIndex(a.year)-mapYearIndex(b.year));
+      };
+      ensure();
+      let html = `<div style="overflow:auto"><table id="historicalBsTable"><thead><tr><th>آیتم</th>${headerYears}</tr></thead><tbody>`;
+      
+      historicalBalanceTemplate.forEach(item => {
+        html += `<tr><td>${item.name}</td>`+ historicalBalanceData.map((d,i)=>
+          `<td><input class="inp" type="text" inputmode="decimal" data-bs-key="${item.key}" data-i="${i}" value="${d[item.key]||0}"></td>`
+        ).join('') + `</tr>`;
+      });
+      html += `</tbody></table></div>`;
+      $('#historicalBalance').innerHTML = html;
+    }
+
+    function renderRevenue(){
+      const unitOptions = (selectedUnit) => salesUnits.map(u => `<option value="${u.value}" ${selectedUnit === u.value ? 'selected' : ''}>${u.text}</option>`).join('');
+      let rows = revenueData.map((d,i)=>`<tr>
+          <td><input class="inp" data-k="name" data-i="${i}" value="${d.name}"></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="domesticVol" data-i="${i}" value="${d.domesticVol}"></td>
+          <td><select class="inp" data-k="domesticUnit" data-i="${i}">${unitOptions(d.domesticUnit)}</select></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="domesticPrice" data-i="${i}" value="${d.domesticPrice}" title="ریال"></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="exportVol" data-i="${i}" value="${d.exportVol}"></td>
+          <td><select class="inp" data-k="exportUnit" data-i="${i}">${unitOptions(d.exportUnit)}</select></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="exportPriceUSD" data-i="${i}" value="${d.exportPriceUSD}" title="دلار"></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="growth" data-i="${i}" value="${d.growth}"></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="priceGrowth" data-i="${i}" value="${d.priceGrowth}"></td>
+        </tr>`).join('');
+      $('#revenue').innerHTML = `<div style="overflow:auto"><table id="revenueTable"><thead><tr><th>نام محصول</th><th>حجم داخلی</th><th>واحد</th><th>نرخ داخلی</th><th>حجم صادرات</th><th>واحد</th><th>نرخ صادرات</th><th>رشد حجم (%)</th><th>رشد نرخ (%)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+
+    function renderCogs(){
+      let rows = cogsData.map((d,i)=>`<tr>
+          <td><input class="inp" data-k="name" data-i="${i}" value="${d.name}"></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="consumption" data-i="${i}" value="${d.consumption}"></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="price" data-i="${i}" value="${d.price}"></td>
+          <td><select class="inp" data-k="unit" data-i="${i}"><option value="rial/kg" ${d.unit==='rial/kg'?'selected':''}>ریال/کیلوگرم</option><option value="usd/kg" ${d.unit==='usd/kg'?'selected':''}>دلار/کیلوگرم</option><option value="rial/ton" ${d.unit==='rial/ton'?'selected':''}>ریال/تن</option><option value="usd/ton" ${d.unit==='usd/ton'?'selected':''}>دلار/تن</option></select></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-k="inflation" data-i="${i}" value="${d.inflation}"></td>
+        </tr>`).join('');
+      $('#cogs').innerHTML = `<div style="overflow:auto"><table id="cogsTable"><thead><tr><th>ماده اولیه</th><th>ضریب مصرف</th><th>نرخ</th><th>واحد نرخ</th><th>تورم نرخ (%)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+
+    function renderSimpleTable(containerId, data, title, headers, rowGenerator){
+      let rows = data.map(rowGenerator).join('');
+      $(containerId).innerHTML = `<div style="overflow:auto"><table id="${containerId.substring(1)}Table"><thead><tr><th>${title}</th><th>${headers.join('</th><th>')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+
+    function renderLabor(){ renderSimpleTable('#labor', directLaborData, 'شرح', ['مبلغ پایه (میلیون ریال)','رشد سالانه (%)'], (d,i)=>`<tr><td><input class="inp" data-k="name" data-i="${i}" value="${d.name}"></td><td><input class="inp" type="text" inputmode="decimal" data-k="cost" data-i="${i}" value="${d.cost}"></td><td><input class="inp" type="text" inputmode="decimal" data-k="inflation" data-i="${i}" value="${d.inflation}"></td></tr>`); }
+    function renderOverhead(){ renderSimpleTable('#overhead', overheadData, 'شرح', ['مبلغ پایه (میلیون ریال)','تورم سالانه (%)'], (d,i)=>`<tr><td><input class="inp" data-k="name" data-i="${i}" value="${d.name}"></td><td><input class="inp" type="text" inputmode="decimal" data-k="cost" data-i="${i}" value="${d.cost}"></td><td><input class="inp" type="text" inputmode="decimal" data-k="inflation" data-i="${i}" value="${d.inflation}"></td></tr>`); }
+
+    function renderInventory(){
+      const d = inventoryData;
+      $('#inventory').innerHTML = `<div style="overflow:auto"><table id="inventoryTable"><thead><tr><th>شرح</th><th>مبلغ پایه (میلیون ریال)</th><th>رشد سالانه (%)</th></tr></thead><tbody>
+        <tr><td>موجودی اول دوره</td><td><input class="inp" type="text" inputmode="decimal" data-k="beginning" value="${d.beginning}"></td><td rowspan="3"><input class="inp" type="text" inputmode="decimal" data-k="growth" value="${d.growth}"></td></tr>
+        <tr><td>موجودی پایان دوره</td><td><input class="inp" type="text" inputmode="decimal" data-k="ending" value="${d.ending}"></td></tr>
+        <tr><td>هزینه‌های جذب‌نشده</td><td><input class="inp" type="text" inputmode="decimal" data-k="unabsorbed" value="${d.unabsorbed}"></td></tr>
+      </tbody></table></div>`;
+    }
+
+    function renderOthers(){
+      const rows = otherProjectionsData.map(d=>`<tr>
+          <td>${pnlTemplate.find(x=>x.id===d.id)?.name ?? d.id}</td>
+          <td><input class="inp" type="text" inputmode="decimal" data-id="${d.id}" data-k="base" value="${d.base}"></td>
+          <td><input class="inp" type="text" inputmode="decimal" data-id="${d.id}" data-k="growth" value="${d.growth}"></td>
+        </tr>`).join('');
+      $('#others').innerHTML = `<div style="overflow:auto"><table id="othersTable"><thead><tr><th>سرفصل</th><th>مبلغ پایه (میلیون ریال)</th><th>رشد سالانه (%)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+    
+    function renderProjectionTable(list){
+      let html = `<div style="overflow:auto"><table id="projectionTable"><thead><tr><th>سرفصل</th>${list.map(p=>`<th>سال ${p.year}</th>`).join('')}</tr></thead><tbody>`;
+      pnlTemplate.forEach(item=>{
+        if(item.id==='ebitda') return;
+        html += `<tr><td>${item.name}</td>${list.map(p=>`<td class="${['subtotal','total'].includes(item.type)?'calc':''}">${toFa(p[item.id])}</td>`).join('')}</tr>`;
+      });
+      html += `<tr><td>EBITDA</td>${list.map(p=>`<td class="calc">${toFa(p.ebitda)}</td>`).join('')}</tr>`;
+      html += `</tbody></table></div>`;
+      $('#projection').innerHTML = html;
+    }
+
+    function renderPeValuationTable(netProfitY1){
+      const basePe = num($('#peRatio').value);
+      const peVariations = [basePe-3, basePe-2, basePe-1, basePe, basePe+1, basePe+2, basePe+3].filter(p => p > 0);
+      let table = `<h3>تحلیل ارزش‌گذاری بر اساس نسبت P/E</h3><div class="card" style="background:var(--panel-2);"><table id="peValuationTable"><thead><tr><th>نسبت P/E</th><th>ارزش شرکت (میلیون ریال)</th></tr></thead><tbody>`;
+      peVariations.forEach(pe => {
+          const valuation = netProfitY1 * pe;
+          table += `<tr class="${pe === basePe ? 'calc' : ''}"><td><b>${toFa(pe)}</b></td><td>${toFa(valuation)}</td></tr>`;
+      });
+      table += '</tbody></table></div>';
+      $('#pe-valuation-section').innerHTML = table;
+    }
+
+    function renderSensitivityAnalysis(){
+      const variations = [-0.10, -0.05, 0, 0.05, 0.10];
+      let tablesHTML = '';
+      const createSensTable = (title, overrideKey, overrideBase, overrideIndex = null) => {
+        let table = `<div><table class="card" style="background:var(--panel-2)"><thead><tr><th>${title}</th><th>سود خالص سال پایه</th></tr></thead><tbody>`;
+        variations.forEach(v => {
+          const override = {};
+          const currentValLabel = overrideKey === 'dollarRate' ? toFa(overrideBase * (1+v)) : `${(v*100)>0?'+':''}${toFa(v*100)}%`;
+          if (overrideKey === 'cogsPriceChange') { override.cogsIndex = overrideIndex; override.cogsPriceChange = v; }
+          else if (overrideKey === 'productPriceChange') { override.productIndex = overrideIndex; override.productPriceChange = v; }
+          else if (overrideKey === 'totalSalesMultiplier') { override.totalSalesMultiplier = 1 + v; }
+          else { override[overrideKey] = overrideBase * (1+v); }
+          const projections = calculateProjections(override);
+          const netProfitY1 = projections[0]?.net_profit || 0;
+          table += `<tr class="${v===0?'calc':''}"><td><b>${v===0? 'پایه': currentValLabel}</b></td><td>${toFa(netProfitY1)}</td></tr>`;
+        });
+        return table + '</tbody></table></div>';
+      };
+      if(cogsData.length > 0) tablesHTML += createSensTable(`حساسیت به نرخ ${cogsData[0].name}`, 'cogsPriceChange', cogsData[0].price, 0);
+      if(revenueData.length > 0) tablesHTML += createSensTable(`حساسیت به نرخ ${revenueData[0].name}`, 'productPriceChange', revenueData[0].domesticPrice, 0);
+      tablesHTML += createSensTable('حساسیت به نرخ دلار', 'dollarRate', num($('#dollarRate').value));
+      tablesHTML += createSensTable('حساسیت به فروش کل', 'totalSalesMultiplier', 1);
+      $('#sensitivity-tables').innerHTML = tablesHTML;
+    }
+
+    // ---- Ratios (Gauge + Spark + Bar) ----
+    function halfGauge(containerId, value, min, max, goodLow=false){
+      const container = $(containerId);
+      const v = Math.max(min, Math.min(max, value));
+      const pct = (v - min) / (max - min);
+      const angle = Math.PI * (1 - pct);
+      const x = 80 + 70 * Math.cos(angle);
+      const y = 80 + 70 * Math.sin(angle);
+      const color = goodLow ? (pct < .33 ? 'var(--secondary)' : pct < .66 ? 'var(--warning)' : 'var(--danger)') : (pct < .33 ? 'var(--danger)' : pct < .66 ? 'var(--warning)' : 'var(--secondary)');
+      container.innerHTML = `
+        <svg viewBox="0 0 160 100">
+          <path d="M10,80 A70,70 0 0 1 150,80" fill="none" stroke="#334155" stroke-width="12" />
+          <path d="M10,80 A70,70 0 0 1 150,80" fill="none" stroke="url(#grad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${pct*220} 220" />
+          <defs><linearGradient id="grad" x1="0" x2="1"><stop offset="0%" stop-color="#f87171" /><stop offset="50%" stop-color="#fbbf24" /><stop offset="100%" stop-color="#34d399" /></linearGradient></defs>
+          <circle cx="${x}" cy="${y}" r="6" fill="${color}" />
+          <text x="80" y="95" text-anchor="middle" fill="currentColor" font-size="14" font-weight="800">${toFa(value, 1)}</text>
+        </svg>`;
+    }
+
+    function sparkline(canvasId, arr){
+      const c = $(canvasId); if(!c) return; const ctx = c.getContext('2d');
+      const w = c.width = c.clientWidth; const h = c.height = c.clientHeight;
+      ctx.clearRect(0,0,w,h);
+      if(!arr || arr.length===0) return;
+      const min = Math.min(...arr); const max = Math.max(...arr);
+      const scaleX = w/(arr.length-1||1); const scaleY = max===min? 0 : h/(max-min);
+      ctx.beginPath(); ctx.lineWidth=2; ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
+      arr.forEach((v,i)=>{
+        const x = i*scaleX; const y = h - ((v-min)*scaleY);
+        i===0? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }); ctx.stroke();
+    }
+
+    function buildRatiosSeries(){
+      const base = historicalData.map((h,i)=>{
+        const bs = historicalBalanceData[i];
+        const pnl = calculatePnl(h.values);
+        const sales = pnl.sales||0; const cogs = pnl.cogs||0;
+        const avgInv = ((bs?.inventoryBeginning||0)+(bs?.inventoryEnding||0))/2;
+        return {
+          year: h.year,
+          npm: sales>0? (pnl.net_profit/sales)*100 : 0,
+          dso: sales>0? ((bs?.accountsReceivable||0)/sales)*365 : 0,
+          invDays: cogs>0? (avgInv/cogs)*365 : 0,
+          rcvAsset: (bs?.totalAssets||0)>0? ((bs.accountsReceivable||0)/(bs.totalAssets))*100 : 0,
+        };
+      });
+      if(lastProjections[0]){
+        const y = String(lastProjections[0].year);
+        const s = lastProjections[0].sales||0; const c = lastProjections[0].cogs||0;
+        const bs = getLatestBalanceSheet();
+        const avgInv = ((bs.inventoryBeginning||0)+(bs.inventoryEnding||0))/2;
+        base.push({ year:y, npm:s>0?(lastProjections[0].net_profit/s)*100:0, dso:s>0? (bs.accountsReceivable/s)*365:0, invDays:c>0? (avgInv/c)*365:0, rcvAsset:(bs.totalAssets||0)>0? (bs.accountsReceivable/bs.totalAssets)*100:0 });
+      }
+      return base;
+    }
+    
+    function renderSalesChart() {
+        if (salesChartInstance) {
+            salesChartInstance.destroy();
+        }
+        const ctx = $('#sales-chart').getContext('2d');
+        const selectedYears = $$('#sales-chart-years input:checked').map(cb => cb.value);
+        
+        if (selectedYears.length === 0) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            return;
+        }
+
+        const fiscalMonths = [...PERSIAN_MONTHS.slice(fiscalYearStartMonth - 1), ...PERSIAN_MONTHS.slice(0, fiscalYearStartMonth - 1)];
+        const currentYear = $('#fiscalYear').value;
+        
+        let chartLabels = fiscalMonths;
+        let lastMonthWithSale = -1;
+
+        if (selectedYears.includes(currentYear)) {
+            const currentYearSalesData = monthlySalesData[currentYear] || Array(12).fill(0);
+            const fiscalCurrentYearSales = [...currentYearSalesData.slice(fiscalYearStartMonth - 1), ...currentYearSalesData.slice(0, fiscalYearStartMonth - 1)];
+            const lastMonthIndex = fiscalCurrentYearSales.map((s, i) => s > 0 ? i : -1).filter(i => i !== -1).pop() ?? -1;
+            if (lastMonthIndex > -1) {
+                lastMonthWithSale = lastMonthIndex;
+            }
+        }
+        
+        if (selectedYears.length === 1 && selectedYears[0] === currentYear && lastMonthWithSale > -1) {
+             chartLabels = fiscalMonths.slice(0, lastMonthWithSale + 1);
+        }
+
+        const colors = ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#ec4899'];
+        let datasets = [];
+        
+        selectedYears.forEach((year, index) => {
+            const salesData = monthlySalesData[year] || Array(12).fill(0);
+            const fiscalSales = [...salesData.slice(fiscalYearStartMonth - 1), ...salesData.slice(0, fiscalYearStartMonth - 1)];
+            
+            let dataForChart = fiscalSales;
+            if (year === currentYear && lastMonthWithSale > -1) {
+                dataForChart = fiscalSales.slice(0, lastMonthWithSale + 1);
+            }
+             if (selectedYears.length > 1 && year === currentYear && lastMonthWithSale > -1) {
+                dataForChart = fiscalSales.slice(0, lastMonthWithSale + 1).concat(Array(12 - (lastMonthWithSale + 1)).fill(null));
+            }
+
+
+            const data = salesChartView === 'cumulative'
+                ? dataForChart.reduce((acc, val) => { acc.push((acc.at(-1) || 0) + (val || 0)); return acc; }, [])
+                : dataForChart;
+
+            const color = colors[index % colors.length];
+            const type = salesChartType;
+
+            datasets.push({
+                type: type,
+                label: `${salesChartView === 'cumulative' ? 'تجمعی' : 'فروش'} ${year}`,
+                data: data,
+                borderColor: color,
+                backgroundColor: `${color}99`,
+                fill: salesChartView === 'cumulative' && type === 'line',
+                tension: 0.3,
+            });
+
+            // Add average line
+            if (salesChartView === 'monthly') {
+                const salesWithValues = fiscalSales.filter(v => v > 0);
+                const averageSales = salesWithValues.length > 0 ? salesWithValues.reduce((a, b) => a + b, 0) / salesWithValues.length : 0;
+                datasets.push({
+                    type: 'line',
+                    label: `میانگین ${year}`,
+                    data: Array(chartLabels.length).fill(averageSales),
+                    borderColor: color,
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0,
+                });
+            }
+        });
+        
+        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+
+        salesChartInstance = new Chart(ctx, {
+            type: 'bar', // Base type, will be overridden by datasets
+            data: { labels: chartLabels, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { labels: { color: textColor } },
+                    tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${toFa(context.raw)}` } }
+                },
+                scales: {
+                    x: { ticks: { color: textColor }, grid: { color: 'var(--border)' } },
+                    y: {
+                        ticks: { color: textColor, callback: (val) => toFa(val) },
+                        grid: { color: 'var(--border)' },
+                        title: { display: true, text: 'مبلغ فروش (میلیون ریال)', color: textColor }
+                    }
+                }
+            }
+        });
+    }
+
+
+    function renderRatiosTab(){
+      const series = buildRatiosSeries();
+      const npmArr = series.map(x=> x.npm);
+      const dsoArr = series.map(x=> x.dso);
+      const invArr = series.map(x=> x.invDays);
+      const rcvArr = series.map(x=> x.rcvAsset);
+      halfGauge('#gauge-profit', npmArr.at(-1)||0, -20, 60, false);
+      halfGauge('#gauge-dso', dsoArr.at(-1)||0, 0, 240, true);
+      halfGauge('#gauge-inv', invArr.at(-1)||0, 0, 240, true);
+      halfGauge('#gauge-rcv', rcvArr.at(-1)||0, 0, 40, false);
+      sparkline('#spark-profit', npmArr);
+      sparkline('#spark-dso', dsoArr);
+      sparkline('#spark-inv', invArr);
+      sparkline('#spark-rcv', rcvArr);
+      
+      const chartYearsContainer = $('#sales-chart-years');
+      const allYears = Object.keys(monthlySalesData).sort((a,b) => b-a);
+      const currentYear = $('#fiscalYear').value;
+
+      chartYearsContainer.innerHTML = allYears.map(year => `
+        <label style="display:flex; align-items:center; gap: 5px; color: var(--text); font-size: 13px; cursor: pointer;">
+            <input type="checkbox" value="${year}" class="sales-year-cb" ${year === currentYear ? 'checked' : ''}>
+            ${year}
+        </label>
+      `).join('');
+
+      $$('.sales-year-cb').forEach(cb => cb.addEventListener('change', renderSalesChart));
+      $$('#sales-chart-view-toggle .btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+              $$('#sales-chart-view-toggle .btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+              e.currentTarget.classList.add('active', 'btn-primary');
+              salesChartView = e.currentTarget.dataset.view;
+              renderSalesChart();
+          });
+      });
+       $$('#sales-chart-type-toggle .btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+              $$('#sales-chart-type-toggle .btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+              e.currentTarget.classList.add('active', 'btn-primary');
+              salesChartType = e.currentTarget.dataset.type;
+              renderSalesChart();
+          });
+      });
+      
+      renderSalesChart();
+    }
+
+    // ---- Midterm & Monthly Sales ----
+    function renderMonthlySales() {
+        const container = $('#monthlySalesContainer');
+        const sortedYears = Object.keys(monthlySalesData).sort((a, b) => a.localeCompare(b));
+        const fiscalMonths = [...PERSIAN_MONTHS.slice(fiscalYearStartMonth - 1), ...PERSIAN_MONTHS.slice(0, fiscalYearStartMonth - 1)];
+
+        const header = `<th>ماه</th>` + sortedYears.map(year => `<th>${year}</th>`).join('');
+        
+        const rows = fiscalMonths.map((month, fiscalIndex) => {
+            const actualMonthIndex = (fiscalYearStartMonth - 1 + fiscalIndex) % 12;
+            const cells = sortedYears.map(year => {
+                const yearData = monthlySalesData[year] || Array(12).fill(0);
+                return `<td><input class="inp" type="text" inputmode="decimal" data-year="${year}" data-month-idx="${actualMonthIndex}" value="${yearData[actualMonthIndex] || 0}"></td>`;
+            }).join('');
+            return `<tr><td>${month}</td>${cells}</tr>`;
+        }).join('');
+
+        container.innerHTML = `<div style="overflow-x: auto;"><table id="monthlySalesTable"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+
+
+    function computeMidtermAndSalesAnalysis(){
+      // Update midterm object from inputs
+      midterm.months = num($('#mid-months').value) || 0;
+      midterm.netYTD = num($('#mid-net').value) || 0;
+      midterm.otherYTD = num($('#mid-other-real').value) || 0;
+      midterm.otherRemain = num($('#mid-other-expected').value) || 0;
+      const analyst = toEn($('#mid-analyst-npm').value).trim();
+      midterm.analystNPM = analyst === '' ? null : (parseFloat(analyst) || 0);
+      
+      // Recalculate sales YTD from monthly tables
+      const currentFiscalYear = $('#fiscalYear').value;
+      const currentYearSales = monthlySalesData[currentFiscalYear] || Array(12).fill(0);
+      const ytdSales = currentYearSales.reduce((a, b) => a + b, 0);
+      $('#mid-sales-ytd').value = toFa(ytdSales);
+      midterm.salesYTD = ytdSales;
+
+      // Profitability Estimation
+      const months = Math.max(1, midterm.months);
+      const avgMonthly = midterm.salesYTD / months;
+      const estFullYearSales = avgMonthly * 12;
+      const trueNPM = midterm.salesYTD > 0 ? ((midterm.netYTD - midterm.otherYTD) / midterm.salesYTD) * 100 : 0;
+      const usedNPM = (midterm.analystNPM !== null) ? midterm.analystNPM : trueNPM;
+      const estNetCore = estFullYearSales * (usedNPM/100);
+      const estNetFinal = estNetCore + midterm.otherYTD + midterm.otherRemain;
+
+      $('#mid-avg-sale').textContent = toFa(avgMonthly);
+      $('#mid-est-full-sale').textContent = toFa(estFullYearSales);
+      $('#mid-true-npm').textContent = toFa(trueNPM, 1);
+      $('#mid-est-net-core').textContent = toFa(estNetCore);
+      $('#mid-est-net-final').textContent = toFa(estNetFinal);
+      
+      // Sales Trend Analysis
+      const prevFiscalYear = String(parseInt(currentFiscalYear) - 1);
+      const prevYearSales = monthlySalesData[prevFiscalYear] || Array(12).fill(0);
+      
+      const getFiscalMonthsData = (data) => [...data.slice(fiscalYearStartMonth - 1), ...data.slice(0, fiscalYearStartMonth - 1)];
+      const fiscalCurrentYearSales = getFiscalMonthsData(currentYearSales);
+      const fiscalPrevYearSales = getFiscalMonthsData(prevYearSales);
+
+      const lastMonthIndex = fiscalCurrentYearSales.map((val, i) => val > 0 ? i : -1).filter(i => i !== -1).pop() ?? -1;
+      
+      let mom = 0, yoy = 0, pyRealized = 0;
+      if (lastMonthIndex > -1) {
+          const monthsWithSales = fiscalCurrentYearSales.slice(0, lastMonthIndex + 1);
+          const cumulativeCurrent = monthsWithSales.reduce((a,b) => a+b, 0);
+          const avgCurrent = cumulativeCurrent / monthsWithSales.length;
+          const lastMonthSales = monthsWithSales[lastMonthIndex];
+          if (avgCurrent > 0) {
+              mom = ((lastMonthSales / avgCurrent) - 1) * 100;
+          }
+          
+          const cumulativePrev = fiscalPrevYearSales.slice(0, lastMonthIndex + 1).reduce((a,b) => a+b, 0);
+          if (cumulativePrev > 0) {
+              yoy = ((cumulativeCurrent / cumulativePrev) - 1) * 100;
+          }
+          
+          const totalPrevYearSales = fiscalPrevYearSales.reduce((a,b) => a+b, 0);
+          if (totalPrevYearSales > 0) {
+              pyRealized = (cumulativePrev / totalPrevYearSales) * 100;
+          }
+      }
+      
+      $('#sales-analysis-mom').textContent = toFa(mom, 1);
+      $('#sales-analysis-yoy').textContent = toFa(yoy, 1);
+      $('#sales-analysis-py-realized').textContent = toFa(pyRealized, 1);
+    }
+
+    function renderProjectionAndKPIs(){
+      const netProfitY1 = lastProjections[0]?.net_profit || 0;
+      renderProjectionTable(lastProjections);
+      if(!$('#results').hasAttribute('hidden')){
+        renderSensitivityAnalysis();
+        renderPeValuationTable(netProfitY1);
+      }
+      const disc = num($('#discountRate').value)/100;
+      const pe = num($('#peRatio').value);
+      const evMult = num($('#evEbitdaMultiple').value);
+      const baseBS = getLatestBalanceSheet();
+
+      $('#dcfValuation').textContent = toFa(getDcfValuation(lastProjections, disc));
+      $('#peValuation').textContent = toFa(netProfitY1 * pe);
+      $('#evEbitdaValuation').textContent = toFa((lastProjections[0]?.ebitda || 0) * evMult);
+
+      const salesProj = lastProjections[0]?.sales || 0;
+      const cogsProj = lastProjections[0]?.cogs || 0;
+      $('#profitMargin').textContent = salesProj > 0 ? toFa((netProfitY1 / salesProj) * 100, 1) : '0';
+      $('#dso').textContent = toFa(salesProj > 0 ? (baseBS.accountsReceivable / salesProj) * 365 : 0);
+      const avgInv = (baseBS.inventoryBeginning + baseBS.inventoryEnding) / 2;
+      $('#inventoryDays').textContent = toFa(cogsProj > 0 ? (avgInv / cogsProj) * 365 : 0);
+      const assets = baseBS.totalAssets || 0;
+      $('#debtAssetRatio').textContent = assets > 0 ? toFa((baseBS.totalDebt / assets)*100, 1) : '0';
+      const receivables = baseBS.accountsReceivable || 0;
+      $('#receivablesAssetRatio').textContent = assets > 0 ? toFa((receivables / assets) * 100, 1) : '0';
+    }
+
+    // -------- Export Helpers --------
+    function tableToArray(tableSel){
+      const rows = $$(tableSel + ' tr');
+      return rows.map(tr=> Array.from(tr.querySelectorAll('th,td')).map(td=> td.querySelector('input,select')? (td.querySelector('input,select').value): td.textContent));
+    }
+    function downloadCsv(name, tableSel){
+      const arr = tableToArray(tableSel).map(r=> r.join(','));
+      const blob = new Blob(["\uFEFF" + arr.join('\n')], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name + '.csv'; a.click(); URL.revokeObjectURL(a.href);
+    }
+    function exportAllToXlsx(){
+      const wb = XLSX.utils.book_new();
+      const addSheet = (name, sel) => { try { const ws = XLSX.utils.aoa_to_sheet(tableToArray(sel)); XLSX.utils.book_append_sheet(wb, ws, name) } catch(e){ console.warn(`Could not export sheet: ${name}`) } };
+      addSheet('Historical_PnL', '#historicalTable');
+      addSheet('Historical_BS', '#historicalBsTable');
+      addSheet('Revenue', '#revenueTable');
+      addSheet('COGS', '#cogsTable');
+      addSheet('Labor', '#laborTable');
+      addSheet('Overhead', '#overheadTable');
+      addSheet('Inventory', '#inventoryTable');
+      addSheet('Others', '#othersTable');
+      addSheet('Projection', '#projectionTable');
+      addSheet('PE_Valuation', '#peValuationTable');
+      addSheet('Monthly_Sales', '#monthlySalesTable');
+      XLSX.writeFile(wb, `Valutian-${($('#companyName').value||'Model').replace(/\s+/g,'_')}.xlsx`);
+    }
+
+    // -------- Actions --------
+    const runModel = debounce(()=>{
+      $('#title').textContent = `تحلیل بنیادی — ${$('#companyName').value||'شرکت نمونه'}`;
+      lastProjections = calculateProjections();
+      renderProjectionAndKPIs();
+      if(!$('#ratios').hasAttribute('hidden')) renderRatiosTab();
+      if(!$('#midterm').hasAttribute('hidden')) computeMidtermAndSalesAnalysis();
+    }, 80);
+
+    function renderAll(){
+      renderFiscalYearStart();
+      renderHistorical();
+      renderHistoricalBalance();
+      renderRevenue();
+      renderCogs();
+      renderLabor();
+      renderOverhead();
+      renderInventory();
+      renderOthers();
+      renderMonthlySales();
+    }
+
+    // -------- Events --------
+    document.addEventListener('input', e=>{
+      const t = e.target; if(!t.classList.contains('inp')) return;
+      
+      if(t.id === 'fiscalYearStart') {
+          fiscalYearStartMonth = +t.value;
+          renderMonthlySales();
+          runModel();
+          return;
+      }
+
+      if(t.closest('#historical')){
+        const i = t.dataset.i, f = t.dataset.f;
+        if (f === 'year') { historicalData[i].year = t.value; renderHistoricalBalance(); }
+        else { 
+            historicalData[i].values[f] = num(t.value);
+            const updatedPnl = calculatePnl(historicalData[i].values);
+            const allRows = $$('#historicalTable tbody tr');
+            pnlTemplate.forEach(item => {
+                if (!item.editable) {
+                    const rowElement = allRows.find(row => row.dataset.id === item.id);
+                    if (rowElement) {
+                        const cellElement = rowElement.cells[parseInt(i) + 2];
+                        if (cellElement) cellElement.textContent = toFa(updatedPnl[item.id]);
+                    }
+                }
+            });
+        }
+        runModel(); return;
+      }
+      if(t.closest('#historicalBalance')){ const i=+t.dataset.i; const k=t.dataset.bsKey; historicalBalanceData[i][k]=num(t.value); runModel(); return; }
+      const k = t.dataset.k;
+      if(t.closest('#revenue')){ const i=+t.dataset.i; revenueData[i][k] = (k==='name'||k.endsWith('Unit')) ? t.value : num(t.value); runModel(); return; }
+      if(t.closest('#cogs')){ const i=+t.dataset.i; cogsData[i][k] = (k==='name'||k==='unit') ? t.value : num(t.value); runModel(); return; }
+      if(t.closest('#labor')){ const i=+t.dataset.i; directLaborData[i][k] = k==='name'?t.value:num(t.value); runModel(); return; }
+      if(t.closest('#overhead')){ const i=+t.dataset.i; overheadData[i][k] = k==='name'?t.value:num(t.value); runModel(); return; }
+      if(t.closest('#inventory')){ inventoryData[k] = num(t.value); runModel(); return; }
+      if(t.closest('#others')){ const id=t.dataset.id; const it=otherProjectionsData.find(x=>x.id===d.id); it[k]=num(t.value); runModel(); return; }
+      
+      if(t.closest('#monthlySalesContainer')){
+          const year = t.dataset.year;
+          const monthIdx = +t.dataset.monthIdx;
+          if (monthlySalesData[year]) {
+              monthlySalesData[year][monthIdx] = num(t.value);
+          }
+          runModel(); return;
+      }
+      
+      if(t.closest('#midterm')){ runModel(); return; }
+      if(['companyName','fiscalYear','dollarRate','dollarGrowthRate','taxRate','discountRate','peRatio','evEbitdaMultiple'].includes(t.id)) runModel();
+    });
+
+    // Buttons
+    $('#pastePnlData').onclick = async () => {
+      try{
+        const text = await navigator.clipboard.readText();
+        const rows = text.trim().split(/[\r\n]+/).map(row => row.split('\t'));
+        const editableItems = pnlTemplate.filter(item => item.editable);
+        if (rows.length === 0) return notify('کلیپ‌بورد خالی است','warn');
+        if (rows.length !== editableItems.length) return notify(`تعداد ردیف‌های کپی شده (${rows.length}) با ردیف‌های قابل ویرایش (${editableItems.length}) مطابقت ندارد.`, 'err');
+        rows.forEach((row, rowIndex) => {
+          const pnlId = editableItems[rowIndex].id;
+          row.forEach((cell, colIndex) => { if (historicalData[colIndex]) historicalData[colIndex].values[pnlId] = num(cell); });
+        });
+        renderHistorical(); runModel(); notify('اطلاعات با موفقیت از کلیپ‌بورد دریافت شد.');
+      }catch(err){ console.error(err); notify('خطا در دریافت اطلاعات از کلیپ‌بورد.','err') }
+    };
+    $('#addYear').onclick = ()=>{ const last = historicalData.at(-1); const y = last? parseInt(toEn(last.year))+1 : 1400; const vals={}; pnlTemplate.forEach(i=>{ if(i.editable) vals[i.id]=0 }); historicalData.push({year:String(y), values:vals}); renderHistorical(); renderHistoricalBalance(); runModel(); };
+    $('#removeYear').onclick = ()=>{ if(historicalData.length>1){ historicalData.pop(); renderHistorical(); renderHistoricalBalance(); runModel(); } };
+    $('#addPnlItem').onclick = ()=>{
+      const name = prompt('نام آیتم جدید (مثلاً: درآمد سرمایه‌گذاری)'); if(!name) return;
+      const type = prompt("نوع آیتم: 'income' یا 'expense'؟", 'income'); if(!['income','expense'].includes(type)) return;
+      const before = prompt('این آیتم قبل از کدام سرفصل اضافه شود؟ (مثلاً: سود عملیاتی (EBIT))', 'سود عملیاتی (EBIT)');
+      const idx = pnlTemplate.findIndex(x=>x.name===before); if(idx<0) return notify('سرفصل مورد نظر یافت نشد','err');
+      const id = name.replace(/\s+/g,'_').toLowerCase();
+      pnlTemplate.splice(idx,0,{ id, name, type, editable:true, draggable:true });
+      historicalData.forEach(y=> y.values[id]=0);
+      renderHistorical(); runModel();
+    };
+    $('#removePnlItem').onclick = ()=>{
+      const removable = pnlTemplate.filter(x=>x.editable).map(x=>x.name).join('\n'); if(!removable) return notify('آیتم قابل حذف وجود ندارد','warn');
+      const name = prompt('نام آیتم جهت حذف:\n'+ removable); if(!name) return;
+      const idx = pnlTemplate.findIndex(x=>x.name===name && x.editable); if(idx<0) return notify('پیدا نشد','err');
+      const id = pnlTemplate[idx].id; pnlTemplate.splice(idx,1); historicalData.forEach(y=> delete y.values[id]);
+      renderHistorical(); runModel();
+    };
+    $('#addBsItem').onclick = () => {
+        const name = prompt('نام آیتم جدید ترازنامه');
+        if (!name || name.trim() === '') return;
+        const key = 'custom_' + name.trim().replace(/\s+/g, '_').toLowerCase();
+        if (historicalBalanceTemplate.some(item => item.key === key)) {
+            return notify('این آیتم از قبل وجود دارد', 'warn');
+        }
+        historicalBalanceTemplate.push({ key, name, removable: true });
+        historicalBalanceData.forEach(yearData => yearData[key] = 0);
+        renderHistoricalBalance();
+    };
+    $('#removeBsItem').onclick = () => {
+        const removableItems = historicalBalanceTemplate.filter(item => item.removable);
+        if (removableItems.length === 0) return notify('آیتم قابل حذفی وجود ندارد', 'warn');
+        const list = removableItems.map((item, i) => `${i + 1}: ${item.name}`).join('\n');
+        const choice = prompt('شماره آیتم برای حذف را وارد کنید:\n' + list);
+        const index = parseInt(choice) - 1;
+        if (isNaN(index) || index < 0 || index >= removableItems.length) return;
+        const itemToRemove = removableItems[index];
+        historicalBalanceTemplate = historicalBalanceTemplate.filter(item => item.key !== itemToRemove.key);
+        historicalBalanceData.forEach(yearData => delete yearData[itemToRemove.key]);
+        renderHistoricalBalance();
+        runModel();
+    };
+    $('#addRevenue').onclick = ()=>{ revenueData.push({ name:'جدید', domesticVol:0, domesticUnit:'ton', domesticPrice:0, exportVol:0, exportUnit:'ton', exportPriceUSD:0, growth:0, priceGrowth:0 }); renderRevenue(); runModel(); };
+    $('#removeRevenue').onclick = ()=>{ if(revenueData.length){ revenueData.pop(); renderRevenue(); runModel(); } };
+    $('#addCogs').onclick = ()=>{ cogsData.push({ name:'جدید', consumption:0, price:0, unit:'rial/kg', inflation:0 }); renderCogs(); runModel(); };
+    $('#removeCogs').onclick = ()=>{ if(cogsData.length){ cogsData.pop(); renderCogs(); runModel(); } };
+    $('#addLabor').onclick = ()=>{ directLaborData.push({ name:'جدید', cost:0, inflation:0 }); renderLabor(); runModel(); };
+    $('#removeLabor').onclick = ()=>{ if(directLaborData.length){ directLaborData.pop(); renderLabor(); runModel(); } };
+    $('#addOverhead').onclick = ()=>{ overheadData.push({ name:'جدید', cost:0, inflation:0 }); renderOverhead(); runModel(); };
+    $('#removeOverhead').onclick = ()=>{ if(overheadData.length){ overheadData.pop(); renderOverhead(); runModel(); } };
+    
+    // Monthly Sales Buttons
+    $('#addSalesYear').onclick = () => {
+        const years = Object.keys(monthlySalesData).map(Number);
+        const lastYear = Math.max(...years, 0);
+        const newYear = String(lastYear + 1);
+        monthlySalesData[newYear] = Array(12).fill(0);
+        renderMonthlySales();
+    };
+    $('#removeSalesYear').onclick = () => {
+        const years = Object.keys(monthlySalesData).sort();
+        if (years.length > 1) {
+            delete monthlySalesData[years.at(-1)];
+            renderMonthlySales();
+        }
+    };
+
+    // Tabs
+    $$('.tab').forEach(btn=> btn.onclick = (e)=>{
+      $$('.tab').forEach(x=>x.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      const tab = e.currentTarget.dataset.tab;
+      $('#inputs').hidden = (tab!=='inputs');
+      $('#results').hidden = (tab!=='results');
+      $('#ratios').hidden  = (tab!=='ratios');
+      $('#midterm').hidden = (tab!=='midterm');
+      if(tab==='results' || tab==='ratios' || tab==='midterm') runModel();
+    });
+    $('#btn-theme').onclick = ()=>{ 
+        document.documentElement.classList.toggle('light'); 
+        saveTheme();
+        if (!$('#ratios').hidden) {
+            renderSalesChart();
+        }
+    };
+
+    // Export/Import
+    $('#btn-export').onclick = ()=>{
+      const data = {
+        analysisInfo: { companyName: $('#companyName').value, fiscalYear: $('#fiscalYear').value, fiscalYearStartMonth },
+        pnlTemplate, historicalBalanceTemplate, historicalData, historicalBalanceData, revenueData, cogsData, directLaborData, overheadData, inventoryData, otherProjectionsData,
+        monthlySalesData, midterm,
+        generalAssumptions: {
+          dollarRate: $('#dollarRate').value, dollarGrowthRate: $('#dollarGrowthRate').value,
+          taxRate: $('#taxRate').value, discountRate: $('#discountRate').value,
+          peRatio: $('#peRatio').value, evEbitdaMultiple: $('#evEbitdaMultiple').value,
+        }
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Valutian-${($('#companyName').value||'Model').split(' ').join('_')}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+    $('#btn-import').onclick = ()=> $('#fileInput').click();
+    $('#fileInput').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      const txt = await f.text();
+      try{
+        const o = JSON.parse(txt);
+        if(o.pnlTemplate) pnlTemplate = o.pnlTemplate;
+        if(o.historicalBalanceTemplate) historicalBalanceTemplate = o.historicalBalanceTemplate;
+        if(o.historicalData) historicalData = o.historicalData;
+        if(o.historicalBalanceData) historicalBalanceData = o.historicalBalanceData;
+        if(o.revenueData) revenueData = o.revenueData;
+        if(o.cogsData) cogsData = o.cogsData;
+        if(o.directLaborData) directLaborData = o.directLaborData;
+        if(o.overheadData) overheadData = o.overheadData;
+        if(o.inventoryData) inventoryData = o.inventoryData;
+        if(o.otherProjectionsData) otherProjectionsData = o.otherProjectionsData;
+        if(o.monthlySalesData) monthlySalesData = o.monthlySalesData;
+        if(o.midterm) midterm = o.midterm;
+        if(o.analysisInfo){ 
+            $('#companyName').value = o.analysisInfo.companyName || ''; 
+            $('#fiscalYear').value = o.analysisInfo.fiscalYear || '';
+            fiscalYearStartMonth = o.analysisInfo.fiscalYearStartMonth || 1;
+        }
+        if(o.generalAssumptions){
+          $('#dollarRate').value = o.generalAssumptions.dollarRate || $('#dollarRate').value;
+          $('#dollarGrowthRate').value = o.generalAssumptions.dollarGrowthRate || $('#dollarGrowthRate').value;
+          $('#taxRate').value = o.generalAssumptions.taxRate || $('#taxRate').value;
+          $('#discountRate').value = o.generalAssumptions.discountRate || $('#discountRate').value;
+          $('#peRatio').value = o.generalAssumptions.peRatio || $('#peRatio').value;
+          $('#evEbitdaMultiple').value = o.generalAssumptions.evEbitdaMultiple || $('#evEbitdaMultiple').value;
+        }
+        renderAll(); runModel(); notify('مدل با موفقیت بارگذاری شد');
+      }catch(err){ console.error(err); notify('فایل نامعتبر است','err') }
+      finally{ e.target.value = '' }
+    });
+
+    // CSV buttons
+    $('#exportHistoricalCsv').onclick = ()=> downloadCsv('Historical_PnL','#historicalTable');
+    $('#exportHistoricalBsCsv').onclick = ()=> downloadCsv('Historical_BS','#historicalBsTable');
+    $('#exportRevenueCsv').onclick = ()=> downloadCsv('Revenue','#revenueTable');
+    $('#exportCogsCsv').onclick = ()=> downloadCsv('COGS','#cogsTable');
+    $('#exportLaborCsv').onclick = ()=> downloadCsv('Labor','#laborTable');
+    $('#exportOverheadCsv').onclick = ()=> downloadCsv('Overhead','#overheadTable');
+    $('#exportInventoryCsv').onclick = ()=> downloadCsv('Inventory','#inventoryTable');
+    $('#exportOthersCsv').onclick = ()=> downloadCsv('Others','#othersTable');
+    $('#exportProjectionCsv').onclick = ()=> downloadCsv('Projection','#projectionTable');
+    $('#exportMonthlyCsv').onclick = ()=> downloadCsv('Monthly_Sales','#monthlySalesTable');
+    $('#btn-export-all-xlsx').onclick = exportAllToXlsx;
+
+    // Init
+    loadTheme();
+    renderAll();
+    runModel();
+  </script>
+</body>
+</html>
