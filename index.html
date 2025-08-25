@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>نرم افزار تحلیل بنیادی </title>
+  <title>نرم افزار تحلیل جامع بنیادی</title>
 
-  <!-- Fonts & Libs -->
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
 
   <style>
     :root{
@@ -37,8 +35,9 @@
     .grid-3{ grid-template-columns:repeat(3,minmax(0,1fr)) }
     .grid-4{ grid-template-columns:repeat(4,minmax(0,1fr)) }
     .grid-5{ grid-template-columns:repeat(5,minmax(0,1fr)) }
-    @media (max-width:1200px){ .grid-5{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
-    @media (max-width:980px){ .grid-2,.grid-3,.grid-4,.grid-5{ grid-template-columns:1fr } }
+    .grid-6{ grid-template-columns:repeat(6,minmax(0,1fr)) } /* New Grid style */
+    @media (max-width:1200px){ .grid-5, .grid-6{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
+    @media (max-width:980px){ .grid-2,.grid-3,.grid-4,.grid-5, .grid-6{ grid-template-columns:1fr } }
     .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
     .btn{ cursor:pointer; border:none; padding:10px 14px; border-radius:12px; color:#0b1220; font-weight:800; background: #e2e8f0; }
     .btn:disabled{opacity:.6; cursor:not-allowed}
@@ -53,6 +52,8 @@
     table{ width:100%; border-collapse:collapse; font-size:13px }
     th,td{ border-bottom:1px dashed var(--border); padding:8px; text-align:center; white-space:nowrap }
     thead th{ position:sticky; top:0; background:var(--panel); z-index:1 }
+    tfoot tr, tfoot td { border-bottom: none; }
+    tfoot td { font-weight: 800; font-size: 14px; color: var(--primary); padding-top: 12px; }
     .calc{ background:var(--calc); font-weight:800 }
     .drag-handle{ cursor:grab; user-select:none; text-align:center }
     .kpi{ display:grid; gap:12px }
@@ -68,6 +69,8 @@
     /* ---- Gauge & Chart ---- */
     .gauge{ display:flex; flex-direction:column; gap:8px; align-items:center; background:var(--panel-2); border:1px solid var(--border); border-radius:14px; padding:12px }
     .gauge svg{ width:160px; height:100px }
+    .gauge .title { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .gauge .val { font-weight: 900; font-size: 20px; direction: ltr; margin-top: 4px; }
     .spark{ width:100%; height:36px }
     .chart-container { position: relative; height: 450px; width: 100%; background: var(--panel-2); padding: 10px; border-radius: 12px;}
     .toggle-group { display:flex; gap: 8px; border: 1px solid var(--border); padding: 4px; border-radius: 10px; }
@@ -78,7 +81,7 @@
   <div class="container">
     <div class="hero">
       <div>
-        <h1 id="title">  تحلیل جامع بنیادی</h1>
+        <h1 id="title">ابزار جامع تحلیل بنیادی</h1>
       </div>
       <div class="grid grid-3">
         <div>
@@ -107,7 +110,6 @@
       <input type="file" id="fileInput" accept="application/json,.json" hidden />
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
       <button class="tab active" data-tab="inputs">ورودی‌ها و مفروضات</button>
       <button class="tab" data-tab="results">نتایج و تحلیل‌ها</button>
@@ -115,7 +117,6 @@
       <button class="tab" data-tab="midterm">میان‌دوره‌ای و فروش ماهانه</button>
     </div>
 
-    <!-- INPUTS TAB -->
     <section id="inputs" class="card">
         <div class="grid grid-3">
             <div>
@@ -160,6 +161,7 @@
         <div class="toolbar" style="margin-bottom:6px">
             <button class="btn btn-green" id="addBsItem">افزودن آیتم</button>
             <button class="btn btn-red" id="removeBsItem">حذف آیتم</button>
+            <button class="btn btn-primary" id="pasteBsData">دریافت از کلیپ‌بورد</button>
             <button class="btn btn-amber" id="exportHistoricalBsCsv">CSV</button>
         </div>
         <div id="historicalBalance" class="card" style="background:var(--panel-2)"></div>
@@ -216,7 +218,6 @@
         <div id="others" class="card" style="background:var(--panel-2)"></div>
     </section>
 
-    <!-- RESULTS TAB -->
     <section id="results" class="card" hidden>
       <div class="kpi grid-3">
         <div class="box">
@@ -234,8 +235,8 @@
       </div>
 
       <h3 style="margin:22px 0 10px">نسبت‌های کلیدی مالی (سال پایه پیش‌بینی)</h3>
-      <div class="kpi grid-5">
-        <div class="box">
+      <div class="kpi grid-6">
+      <div class="box">
           <div class="title">حاشیه سود خالص (%)</div>
           <div id="profitMargin" class="val">0</div>
         </div>
@@ -255,7 +256,11 @@
           <div class="title">نسبت مطالبات به دارایی (%)</div>
           <div id="receivablesAssetRatio" class="val">0</div>
         </div>
-      </div>
+        <div class="box">
+            <div class="title">بهای تمام شده هر واحد (ریال)</div>
+            <div id="cogsPerUnit" class="val">0</div>
+        </div>
+        </div>
 
       <h3 style="margin:22px 0 10px">تحلیل حساسیت سود خالص سال پایه (میلیون ریال)</h3>
       <div class="grid grid-2" id="sensitivity-tables"></div>
@@ -269,37 +274,19 @@
       <div id="projection" class="card" style="background:var(--panel-2)"></div>
     </section>
 
-    <!-- RATIOS TAB -->
     <section id="ratios" class="card" hidden>
-      <div class="grid grid-4">
-        <div class="gauge">
-          <div class="title">حاشیه سود خالص (روند + گیج)</div>
-          <div id="gauge-profit"></div>
-          <canvas id="spark-profit" class="spark"></canvas>
-        </div>
-        <div class="gauge">
-          <div class="title">دوره وصول مطالبات (روز)</div>
-          <div id="gauge-dso"></div>
-          <canvas id="spark-dso" class="spark"></canvas>
-        </div>
-        <div class="gauge">
-          <div class="title">دوره گردش موجودی (روز)</div>
-          <div id="gauge-inv"></div>
-          <canvas id="spark-inv" class="spark"></canvas>
-        </div>
-        <div class="gauge">
-          <div class="title">مطالبات/دارایی (%)</div>
-          <div id="gauge-rcv"></div>
-          <canvas id="spark-rcv" class="spark"></canvas>
-        </div>
-      </div>
-      <div class="note" style="margin-top:10px">منابع: صورت‌های تاریخی + سال پایهٔ پیش‌بینی. (نمودار کوچک: روند چندساله)</div>
+      <h3 style="margin:0 0 10px">عملکرد سال آخر در مقایسه با میانگین تاریخی</h3>
+      <div id="gauge-container" class="grid grid-4 kpi" style="margin-bottom: 22px;">
+          </div>
+
+      <h3 style="margin:0 0 10px">روند نسبت‌های مالی کلیدی</h3>
+      <div id="historical-ratios-grid" class="card" style="background:var(--panel-2)">
+          </div>
       
       <h3 style="margin:22px 0 10px">تحلیل فروش ماهانه (میلیون ریال)</h3>
       <div class="toolbar" style="margin-bottom:10px; justify-content: space-between;">
         <div id="sales-chart-years" style="display:flex; gap: 15px; flex-wrap: wrap;">
-            <!-- Year checkboxes will be injected here -->
-        </div>
+            </div>
         <div style="display: flex; gap: 12px;">
             <div class="toggle-group" id="sales-chart-view-toggle">
                 <button class="btn active" data-view="monthly">ماهانه</button>
@@ -316,7 +303,6 @@
       </div>
     </section>
 
-    <!-- MIDTERM TAB -->
     <section id="midterm" class="card" hidden>
       <div class="grid grid-3">
         <div>
@@ -349,6 +335,7 @@
       <div class="toolbar" style="margin-bottom:10px">
         <button class="btn btn-green" id="addSalesYear">افزودن سال</button>
         <button class="btn btn-red" id="removeSalesYear">حذف سال</button>
+        <button class="btn btn-primary" id="pasteMonthlySalesData">دریافت از کلیپ‌بورد</button>
         <button class="btn btn-amber" id="exportMonthlyCsv">CSV</button>
       </div>
       <div id="monthlySalesContainer" class="card" style="background:var(--panel-2)"></div>
@@ -380,7 +367,20 @@
     const $$ = sel => Array.from(document.querySelectorAll(sel));
     const toFa = (n, frac=0) => isFinite(n) ? Number(n).toLocaleString('fa-IR',{maximumFractionDigits:frac}) : '-';
     const toEn = v => String(v ?? '').replace(/٬|,/g,'').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
-    const num = v => { const x = parseFloat(toEn(v)); return isFinite(x) ? x : 0 };
+    
+    const num = v => {
+      let s = String(v ?? '').trim();
+      let isNegative = false;
+      if (s.startsWith('(') && s.endsWith(')')) {
+        isNegative = true;
+        s = s.substring(1, s.length - 1);
+      }
+      const englishNum = toEn(s);
+      const x = parseFloat(englishNum);
+      if (!isFinite(x)) return 0;
+      return isNegative ? -x : x;
+    };
+
     const debounce = (fn, ms=120)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms) } };
     const notify = (msg,tone='ok')=>{ const t=$('#toast'); t.textContent=msg; t.style.borderColor=tone==='err'?'var(--danger)':tone==='warn'?'var(--warning)':'var(--border)'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200) };
     const saveTheme = ()=> localStorage.setItem('valutian-theme', document.documentElement.classList.contains('light')?'light':'dark');
@@ -458,18 +458,70 @@
 
     function calculatePnl(values){
       const res = { ...values };
-      res.gross_profit = (res.sales||0) - (res.cogs||0);
+      res.gross_profit = (res.sales || 0) - Math.abs(res.cogs || 0);
       let op = res.gross_profit;
       pnlTemplate.forEach(item => {
-        if(item.type==='income' && !['sales','non_op_income_expense'].includes(item.id)) op += (res[item.id]||0);
-        if(item.type==='expense' && !['cogs','tax','finance_cost'].includes(item.id)) op -= (res[item.id]||0);
+        if (item.type === 'income' && !['sales', 'non_op_income_expense'].includes(item.id)) {
+            op += (res[item.id] || 0);
+        }
+        if (item.type === 'expense' && !['cogs', 'tax', 'finance_cost'].includes(item.id)) {
+            op -= Math.abs(res[item.id] || 0);
+        }
       });
       res.op_profit = op;
-      res.ebitda = res.op_profit + (res.depr_amort || 0);
-      res.ebt = res.op_profit + (res.non_op_income_expense||0) - (res.finance_cost||0);
-      res.net_profit = res.ebt - (res.tax||0);
+      res.ebitda = res.op_profit + Math.abs(res.depr_amort || 0);
+      res.ebt = res.op_profit + (res.non_op_income_expense || 0) - Math.abs(res.finance_cost || 0);
+      res.tax = res.tax || 0;
+      res.net_profit = res.ebt - Math.abs(res.tax);
       return res;
     }
+
+    // -------- START: New Helper & Total Calculation Functions --------
+    function calculateTotalBaseUnits() {
+        let totalUnits = 0;
+        revenueData.forEach(p => {
+            const domesticMultiplier = p.domesticUnit === 'ton' ? 1000 : 1;
+            const exportMultiplier = p.exportUnit === 'ton' ? 1000 : 1;
+            totalUnits += (p.domesticVol * domesticMultiplier) + (p.exportVol * exportMultiplier);
+        });
+        return totalUnits;
+    }
+
+    function updateTableFooters() {
+        const dollarRate = num($('#dollarRate').value);
+
+        // Revenue Footer
+        const totalRevenue = revenueData.reduce((total, p) => {
+            const domesticRevenue = p.domesticVol * p.domesticPrice;
+            const exportRevenue = p.exportVol * p.exportPriceUSD * dollarRate;
+            return total + domesticRevenue + exportRevenue;
+        }, 0);
+        const revenueFooter = $('#revenue-footer');
+        if(revenueFooter) revenueFooter.innerHTML = `<td colspan="9">جمع مبلغ ریالی سال پایه: ${toFa(totalRevenue)}</td>`;
+
+        // COGS Footer
+        const totalUnits = calculateTotalBaseUnits();
+        const totalCogsMaterials = cogsData.reduce((total, m) => {
+            let rpk = m.price;
+            if (m.unit === 'usd/kg') rpk = m.price * dollarRate;
+            else if (m.unit === 'rial/ton') rpk = m.price / 1000;
+            else if (m.unit === 'usd/ton') rpk = (m.price * dollarRate) / 1000;
+            return total + (totalUnits * m.consumption * rpk);
+        }, 0);
+        const cogsFooter = $('#cogs-footer');
+        if(cogsFooter) cogsFooter.innerHTML = `<td colspan="5">جمع مبلغ ریالی سال پایه: ${toFa(totalCogsMaterials)}</td>`;
+
+        // Labor Footer
+        const totalLabor = directLaborData.reduce((total, item) => total + item.cost, 0);
+        const laborFooter = $('#labor-footer');
+        if(laborFooter) laborFooter.innerHTML = `<td colspan="3">جمع مبلغ پایه (میلیون ریال): ${toFa(totalLabor)}</td>`;
+        
+        // Overhead Footer
+        const totalOverhead = overheadData.reduce((total, item) => total + item.cost, 0);
+        const overheadFooter = $('#overhead-footer');
+        if(overheadFooter) overheadFooter.innerHTML = `<td colspan="3">جمع مبلغ پایه (میلیون ریال): ${toFa(totalOverhead)}</td>`;
+    }
+    // -------- END: New Helper & Total Calculation Functions --------
 
     // -------- Projection Engine --------
     function calculateProjections(overrides={}){
@@ -629,7 +681,7 @@
           <td><input class="inp" type="text" inputmode="decimal" data-k="growth" data-i="${i}" value="${d.growth}"></td>
           <td><input class="inp" type="text" inputmode="decimal" data-k="priceGrowth" data-i="${i}" value="${d.priceGrowth}"></td>
         </tr>`).join('');
-      $('#revenue').innerHTML = `<div style="overflow:auto"><table id="revenueTable"><thead><tr><th>نام محصول</th><th>حجم داخلی</th><th>واحد</th><th>نرخ داخلی</th><th>حجم صادرات</th><th>واحد</th><th>نرخ صادرات</th><th>رشد حجم (%)</th><th>رشد نرخ (%)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      $('#revenue').innerHTML = `<div style="overflow:auto"><table id="revenueTable"><thead><tr><th>نام محصول</th><th>حجم داخلی</th><th>واحد</th><th>نرخ داخلی</th><th>حجم صادرات</th><th>واحد</th><th>نرخ صادرات</th><th>رشد حجم (%)</th><th>رشد نرخ (%)</th></tr></thead><tbody>${rows}</tbody><tfoot id="revenue-footer"></tfoot></table></div>`;
     }
 
     function renderCogs(){
@@ -640,12 +692,12 @@
           <td><select class="inp" data-k="unit" data-i="${i}"><option value="rial/kg" ${d.unit==='rial/kg'?'selected':''}>ریال/کیلوگرم</option><option value="usd/kg" ${d.unit==='usd/kg'?'selected':''}>دلار/کیلوگرم</option><option value="rial/ton" ${d.unit==='rial/ton'?'selected':''}>ریال/تن</option><option value="usd/ton" ${d.unit==='usd/ton'?'selected':''}>دلار/تن</option></select></td>
           <td><input class="inp" type="text" inputmode="decimal" data-k="inflation" data-i="${i}" value="${d.inflation}"></td>
         </tr>`).join('');
-      $('#cogs').innerHTML = `<div style="overflow:auto"><table id="cogsTable"><thead><tr><th>ماده اولیه</th><th>ضریب مصرف</th><th>نرخ</th><th>واحد نرخ</th><th>تورم نرخ (%)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      $('#cogs').innerHTML = `<div style="overflow:auto"><table id="cogsTable"><thead><tr><th>ماده اولیه</th><th>ضریب مصرف</th><th>نرخ</th><th>واحد نرخ</th><th>تورم نرخ (%)</th></tr></thead><tbody>${rows}</tbody><tfoot id="cogs-footer"></tfoot></table></div>`;
     }
 
     function renderSimpleTable(containerId, data, title, headers, rowGenerator){
       let rows = data.map(rowGenerator).join('');
-      $(containerId).innerHTML = `<div style="overflow:auto"><table id="${containerId.substring(1)}Table"><thead><tr><th>${title}</th><th>${headers.join('</th><th>')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      $(containerId).innerHTML = `<div style="overflow:auto"><table id="${containerId.substring(1)}Table"><thead><tr><th>${title}</th><th>${headers.join('</th><th>')}</th></tr></thead><tbody>${rows}</tbody><tfoot id="${containerId.substring(1)}-footer"></tfoot></table></div>`;
     }
 
     function renderLabor(){ renderSimpleTable('#labor', directLaborData, 'شرح', ['مبلغ پایه (میلیون ریال)','رشد سالانه (%)'], (d,i)=>`<tr><td><input class="inp" data-k="name" data-i="${i}" value="${d.name}"></td><td><input class="inp" type="text" inputmode="decimal" data-k="cost" data-i="${i}" value="${d.cost}"></td><td><input class="inp" type="text" inputmode="decimal" data-k="inflation" data-i="${i}" value="${d.inflation}"></td></tr>`); }
@@ -718,62 +770,151 @@
     }
 
     // ---- Ratios (Gauge + Spark + Bar) ----
-    function halfGauge(containerId, value, min, max, goodLow=false){
-      const container = $(containerId);
-      const v = Math.max(min, Math.min(max, value));
-      const pct = (v - min) / (max - min);
-      const angle = Math.PI * (1 - pct);
-      const x = 80 + 70 * Math.cos(angle);
-      const y = 80 + 70 * Math.sin(angle);
-      const color = goodLow ? (pct < .33 ? 'var(--secondary)' : pct < .66 ? 'var(--warning)' : 'var(--danger)') : (pct < .33 ? 'var(--danger)' : pct < .66 ? 'var(--warning)' : 'var(--secondary)');
-      container.innerHTML = `
-        <svg viewBox="0 0 160 100">
-          <path d="M10,80 A70,70 0 0 1 150,80" fill="none" stroke="#334155" stroke-width="12" />
-          <path d="M10,80 A70,70 0 0 1 150,80" fill="none" stroke="url(#grad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${pct*220} 220" />
-          <defs><linearGradient id="grad" x1="0" x2="1"><stop offset="0%" stop-color="#f87171" /><stop offset="50%" stop-color="#fbbf24" /><stop offset="100%" stop-color="#34d399" /></linearGradient></defs>
-          <circle cx="${x}" cy="${y}" r="6" fill="${color}" />
-          <text x="80" y="95" text-anchor="middle" fill="currentColor" font-size="14" font-weight="800">${toFa(value, 1)}</text>
-        </svg>`;
+    function halfGauge(container, value, min, max, title, unit = '', higherIsBetter = true) {
+        const v = Math.max(min, Math.min(max, value));
+        const pct = max === min ? 0.5 : (v - min) / (max - min);
+        const angle = Math.PI * (1 - pct);
+        const x = 80 + 70 * Math.cos(angle);
+        const y = 80 + 70 * Math.sin(angle);
+        
+        let goodLow = !higherIsBetter;
+        const color = goodLow 
+            ? (pct < .33 ? 'var(--secondary)' : pct < .66 ? 'var(--warning)' : 'var(--danger)') 
+            : (pct < .33 ? 'var(--danger)' : pct < .66 ? 'var(--warning)' : 'var(--secondary)');
+
+        container.innerHTML = `
+            <div class="title">${title}</div>
+            <svg viewBox="0 0 160 100">
+                <path d="M10,80 A70,70 0 0 1 150,80" fill="none" stroke="var(--border)" stroke-width="12" />
+                <path d="M10,80 A70,70 0 0 1 150,80" fill="none" stroke="url(#grad-${container.id})" stroke-width="12" stroke-linecap="round" stroke-dasharray="${pct*220} 220" />
+                <defs><linearGradient id="grad-${container.id}" x1="0" x2="1">
+                    <stop offset="0%" stop-color="${goodLow ? '#34d399' : '#f87171'}" />
+                    <stop offset="50%" stop-color="#fbbf24" />
+                    <stop offset="100%" stop-color="${goodLow ? '#f87171' : '#34d399'}" />
+                </linearGradient></defs>
+                <circle cx="${x}" cy="${y}" r="6" fill="${color}" />
+                <text x="80" y="70" text-anchor="middle" fill="currentColor" font-size="22" font-weight="900">${toFa(value, 1)}</text>
+                <text x="80" y="95" text-anchor="middle" fill="var(--muted)" font-size="14">${unit}</text>
+            </svg>`;
     }
 
-    function sparkline(canvasId, arr){
-      const c = $(canvasId); if(!c) return; const ctx = c.getContext('2d');
-      const w = c.width = c.clientWidth; const h = c.height = c.clientHeight;
-      ctx.clearRect(0,0,w,h);
-      if(!arr || arr.length===0) return;
-      const min = Math.min(...arr); const max = Math.max(...arr);
-      const scaleX = w/(arr.length-1||1); const scaleY = max===min? 0 : h/(max-min);
-      ctx.beginPath(); ctx.lineWidth=2; ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
-      arr.forEach((v,i)=>{
-        const x = i*scaleX; const y = h - ((v-min)*scaleY);
-        i===0? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      }); ctx.stroke();
-    }
+    function buildRatiosSeries() {
+        const years = [...new Set(historicalData.map(d => d.year))].sort((a, b) => a.localeCompare(b));
+        const combinedData = years.map(year => ({
+            year,
+            pnlData: historicalData.find(d => d.year === year),
+            bsData: historicalBalanceData.find(d => d.year === year) || {}
+        }));
 
-    function buildRatiosSeries(){
-      const base = historicalData.map((h,i)=>{
-        const bs = historicalBalanceData[i];
-        const pnl = calculatePnl(h.values);
-        const sales = pnl.sales||0; const cogs = pnl.cogs||0;
-        const avgInv = ((bs?.inventoryBeginning||0)+(bs?.inventoryEnding||0))/2;
-        return {
-          year: h.year,
-          npm: sales>0? (pnl.net_profit/sales)*100 : 0,
-          dso: sales>0? ((bs?.accountsReceivable||0)/sales)*365 : 0,
-          invDays: cogs>0? (avgInv/cogs)*365 : 0,
-          rcvAsset: (bs?.totalAssets||0)>0? ((bs.accountsReceivable||0)/(bs.totalAssets))*100 : 0,
-        };
-      });
-      if(lastProjections[0]){
-        const y = String(lastProjections[0].year);
-        const s = lastProjections[0].sales||0; const c = lastProjections[0].cogs||0;
-        const bs = getLatestBalanceSheet();
-        const avgInv = ((bs.inventoryBeginning||0)+(bs.inventoryEnding||0))/2;
-        base.push({ year:y, npm:s>0?(lastProjections[0].net_profit/s)*100:0, dso:s>0? (bs.accountsReceivable/s)*365:0, invDays:c>0? (avgInv/c)*365:0, rcvAsset:(bs.totalAssets||0)>0? (bs.accountsReceivable/bs.totalAssets)*100:0 });
-      }
-      return base;
+        const series = [];
+        for (let i = 0; i < combinedData.length; i++) {
+            const current = combinedData[i];
+            const prev = i > 0 ? combinedData[i - 1] : null;
+
+            if (!current.pnlData) continue;
+
+            const pnl = calculatePnl(current.pnlData.values);
+            const bs = current.bsData;
+            const prevPnl = prev && prev.pnlData ? calculatePnl(prev.pnlData.values) : {};
+            const prevBs = prev ? prev.bsData : {};
+
+            const sales = pnl.sales || 0;
+            const prevSales = prevPnl.sales || 0;
+            const totalAssets = bs.totalAssets || 0;
+            const prevTotalAssets = prevBs.totalAssets || 0;
+            const totalDebt = bs.totalDebt || 0;
+            const prevTotalDebt = prevBs.totalDebt || 0;
+            const cogs = Math.abs(pnl.cogs || 0);
+
+            series.push({
+                year: current.year,
+                sales: sales,
+                totalAssets: totalAssets,
+                totalDebt: totalDebt,
+                salesGrowth: prevSales > 0 ? ((sales / prevSales) - 1) * 100 : 0,
+                assetGrowth: prevTotalAssets > 0 ? ((totalAssets / prevTotalAssets) - 1) * 100 : 0,
+                debtGrowth: prevTotalDebt > 0 ? ((totalDebt / prevTotalDebt) - 1) * 100 : 0,
+                gpm: sales > 0 ? (pnl.gross_profit / sales) * 100 : 0,
+                npm: sales > 0 ? (pnl.net_profit / sales) * 100 : 0,
+                dso: sales > 0 ? ((bs.accountsReceivable || 0) / sales) * 365 : 0,
+                invDays: cogs > 0 ? (((bs.inventoryBeginning || 0) + (bs.inventoryEnding || 0)) / 2 / cogs) * 365 : 0,
+                rcvAsset: totalAssets > 0 ? ((bs.accountsReceivable || 0) / totalAssets) * 100 : 0,
+            });
+        }
+        
+        if (lastProjections.length > 0) {
+            const proj = lastProjections[0];
+            const lastHistorical = series.at(-1) || {};
+            const lastBS = getLatestBalanceSheet();
+
+            const sales = proj.sales || 0;
+            const prevSales = lastHistorical.sales || 0;
+            const totalAssets = lastBS.totalAssets || 0;
+            const prevTotalAssets = lastHistorical.totalAssets || 0;
+            const totalDebt = lastBS.totalDebt || 0;
+            const prevTotalDebt = lastHistorical.totalDebt || 0;
+            const cogs = Math.abs(proj.cogs || 0);
+
+            series.push({
+                year: String(proj.year),
+                sales: sales,
+                totalAssets: totalAssets,
+                totalDebt: totalDebt,
+                salesGrowth: prevSales > 0 ? ((sales / prevSales) - 1) * 100 : 0,
+                assetGrowth: prevTotalAssets > 0 ? ((totalAssets / prevTotalAssets) - 1) * 100 : 0,
+                debtGrowth: prevTotalDebt > 0 ? ((totalDebt / prevTotalDebt) - 1) * 100 : 0,
+                gpm: sales > 0 ? (proj.gross_profit / sales) * 100 : 0,
+                npm: sales > 0 ? (proj.net_profit / sales) * 100 : 0,
+                dso: sales > 0 ? ((lastBS.accountsReceivable || 0) / sales) * 365 : 0,
+                invDays: cogs > 0 ? ((lastBS.inventoryEnding || 0) / cogs) * 365 : 0,
+                rcvAsset: totalAssets > 0 ? ((lastBS.accountsReceivable || 0) / totalAssets) * 100 : 0,
+            });
+        }
+        return series;
     }
     
+    function renderRatioGauges(series) {
+        const container = $('#gauge-container');
+        if (!container) return; 
+        
+        container.innerHTML = '';
+        if (series.length < 2) {
+            container.innerHTML = '<p class="note" style="grid-column: 1 / -1;">برای نمایش گیج‌ها، حداقل به یک سال داده تاریخی و یک سال پیش‌بینی نیاز است.</p>';
+            return;
+        }
+
+        const lastYear = series[series.length - 1];
+        const historicalYears = series.slice(0, series.length - 1);
+        
+        const avg = (key) => {
+          const values = historicalYears.map(y => y[key]).filter(v => isFinite(v));
+          return values.length > 0 ? values.reduce((acc, cur) => acc + cur, 0) / values.length : 0;
+        }
+
+        const gauges = [
+            { key: 'gpm', title: 'حاشیه سود ناخالص', unit: '%', higherIsBetter: true },
+            { key: 'salesGrowth', title: 'رشد فروش', unit: '%', higherIsBetter: true },
+            { key: 'assetGrowth', title: 'رشد دارایی', unit: '%', higherIsBetter: true },
+            { key: 'debtGrowth', title: 'رشد بدهی', unit: '%', higherIsBetter: false }
+        ];
+
+        gauges.forEach((g, i) => {
+            const gaugeEl = document.createElement('div');
+            gaugeEl.className = 'gauge';
+            gaugeEl.id = `gauge-${i}`;
+            container.appendChild(gaugeEl);
+
+            const currentValue = lastYear[g.key];
+            const historicalAvg = avg(g.key);
+            
+            const range = Math.max(Math.abs(historicalAvg * 0.5), 10);
+            const min = historicalAvg - range;
+            const max = historicalAvg + range;
+
+            halfGauge(gaugeEl, currentValue, min, max, g.title, g.unit, g.higherIsBetter);
+        });
+    }
+
     function renderSalesChart() {
         if (salesChartInstance) {
             salesChartInstance.destroy();
@@ -790,19 +931,16 @@
         const currentYear = $('#fiscalYear').value;
         
         let chartLabels = fiscalMonths;
-        let lastMonthWithSale = -1;
 
         if (selectedYears.includes(currentYear)) {
-            const currentYearSalesData = monthlySalesData[currentYear] || Array(12).fill(0);
-            const fiscalCurrentYearSales = [...currentYearSalesData.slice(fiscalYearStartMonth - 1), ...currentYearSalesData.slice(0, fiscalYearStartMonth - 1)];
-            const lastMonthIndex = fiscalCurrentYearSales.map((s, i) => s > 0 ? i : -1).filter(i => i !== -1).pop() ?? -1;
-            if (lastMonthIndex > -1) {
-                lastMonthWithSale = lastMonthIndex;
+            const currentYearSales = monthlySalesData[currentYear] || Array(12).fill(0);
+            const fiscalCurrentYearSales = [...currentYearSales.slice(fiscalYearStartMonth - 1), ...currentYearSales.slice(0, fiscalYearStartMonth - 1)];
+
+            const lastDataIndex = fiscalCurrentYearSales.map(val => val !== 0 && isFinite(val)).lastIndexOf(true);
+            
+            if (lastDataIndex > -1) {
+                chartLabels = fiscalMonths.slice(0, lastDataIndex + 1);
             }
-        }
-        
-        if (selectedYears.length === 1 && selectedYears[0] === currentYear && lastMonthWithSale > -1) {
-             chartLabels = fiscalMonths.slice(0, lastMonthWithSale + 1);
         }
 
         const colors = ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#ec4899'];
@@ -812,33 +950,24 @@
             const salesData = monthlySalesData[year] || Array(12).fill(0);
             const fiscalSales = [...salesData.slice(fiscalYearStartMonth - 1), ...salesData.slice(0, fiscalYearStartMonth - 1)];
             
-            let dataForChart = fiscalSales;
-            if (year === currentYear && lastMonthWithSale > -1) {
-                dataForChart = fiscalSales.slice(0, lastMonthWithSale + 1);
-            }
-             if (selectedYears.length > 1 && year === currentYear && lastMonthWithSale > -1) {
-                dataForChart = fiscalSales.slice(0, lastMonthWithSale + 1).concat(Array(12 - (lastMonthWithSale + 1)).fill(null));
-            }
-
+            let dataForChart = fiscalSales.slice(0, chartLabels.length);
 
             const data = salesChartView === 'cumulative'
                 ? dataForChart.reduce((acc, val) => { acc.push((acc.at(-1) || 0) + (val || 0)); return acc; }, [])
                 : dataForChart;
 
             const color = colors[index % colors.length];
-            const type = salesChartType;
-
+            
             datasets.push({
-                type: type,
+                type: salesChartType,
                 label: `${salesChartView === 'cumulative' ? 'تجمعی' : 'فروش'} ${year}`,
                 data: data,
                 borderColor: color,
                 backgroundColor: `${color}99`,
-                fill: salesChartView === 'cumulative' && type === 'line',
+                fill: salesChartView === 'cumulative' && salesChartType === 'line',
                 tension: 0.3,
             });
 
-            // Add average line
             if (salesChartView === 'monthly') {
                 const salesWithValues = fiscalSales.filter(v => v > 0);
                 const averageSales = salesWithValues.length > 0 ? salesWithValues.reduce((a, b) => a + b, 0) / salesWithValues.length : 0;
@@ -858,7 +987,7 @@
         const textColor = getComputedStyle(document.documentElement).getPropertyValue('--muted');
 
         salesChartInstance = new Chart(ctx, {
-            type: 'bar', // Base type, will be overridden by datasets
+            type: 'bar',
             data: { labels: chartLabels, datasets: datasets },
             options: {
                 responsive: true,
@@ -880,29 +1009,44 @@
         });
     }
 
-
     function renderRatiosTab(){
       const series = buildRatiosSeries();
-      const npmArr = series.map(x=> x.npm);
-      const dsoArr = series.map(x=> x.dso);
-      const invArr = series.map(x=> x.invDays);
-      const rcvArr = series.map(x=> x.rcvAsset);
-      halfGauge('#gauge-profit', npmArr.at(-1)||0, -20, 60, false);
-      halfGauge('#gauge-dso', dsoArr.at(-1)||0, 0, 240, true);
-      halfGauge('#gauge-inv', invArr.at(-1)||0, 0, 240, true);
-      halfGauge('#gauge-rcv', rcvArr.at(-1)||0, 0, 40, false);
-      sparkline('#spark-profit', npmArr);
-      sparkline('#spark-dso', dsoArr);
-      sparkline('#spark-inv', invArr);
-      sparkline('#spark-rcv', rcvArr);
+      const container = $('#historical-ratios-grid');
       
+      const ratioKeys = [
+        { key: 'sales', title: 'فروش (میلیون ریال)' },
+        { key: 'salesGrowth', title: 'رشد فروش (%)' },
+        { key: 'gpm', title: 'حاشیه سود ناخالص (%)' },
+        { key: 'npm', title: 'حاشیه سود خالص (%)' },
+        { key: 'dso', title: 'دوره وصول مطالبات (روز)' },
+        { key: 'invDays', title: 'دوره گردش موجودی (روز)' },
+        { key: 'rcvAsset', title: 'مطالبات/دارایی (%)' }
+      ];
+
+      let table = `<table id="ratiosTable"><thead><tr><th>نسبت / سال</th>`;
+      series.forEach(item => { table += `<th>${item.year}</th>`; });
+      table += `</tr></thead><tbody>`;
+
+      ratioKeys.forEach(ratio => {
+          table += `<tr><td>${ratio.title}</td>`;
+          series.forEach(item => {
+              table += `<td>${toFa(item[ratio.key], 1)}</td>`;
+          });
+          table += `</tr>`;
+      });
+
+      table += `</tbody></table>`;
+      container.innerHTML = table;
+      
+      renderRatioGauges(series);
+
       const chartYearsContainer = $('#sales-chart-years');
       const allYears = Object.keys(monthlySalesData).sort((a,b) => b-a);
       const currentYear = $('#fiscalYear').value;
 
       chartYearsContainer.innerHTML = allYears.map(year => `
         <label style="display:flex; align-items:center; gap: 5px; color: var(--text); font-size: 13px; cursor: pointer;">
-            <input type="checkbox" value="${year}" class="sales-year-cb" ${year === currentYear ? 'checked' : ''}>
+            <input type="checkbox" value="${year}" class="sales-year-cb" ${year === currentYear || year === String(parseInt(currentYear)-1) ? 'checked' : ''}>
             ${year}
         </label>
       `).join('');
@@ -950,7 +1094,6 @@
 
 
     function computeMidtermAndSalesAnalysis(){
-      // Update midterm object from inputs
       midterm.months = num($('#mid-months').value) || 0;
       midterm.netYTD = num($('#mid-net').value) || 0;
       midterm.otherYTD = num($('#mid-other-real').value) || 0;
@@ -958,14 +1101,12 @@
       const analyst = toEn($('#mid-analyst-npm').value).trim();
       midterm.analystNPM = analyst === '' ? null : (parseFloat(analyst) || 0);
       
-      // Recalculate sales YTD from monthly tables
       const currentFiscalYear = $('#fiscalYear').value;
       const currentYearSales = monthlySalesData[currentFiscalYear] || Array(12).fill(0);
       const ytdSales = currentYearSales.reduce((a, b) => a + b, 0);
       $('#mid-sales-ytd').value = toFa(ytdSales);
       midterm.salesYTD = ytdSales;
 
-      // Profitability Estimation
       const months = Math.max(1, midterm.months);
       const avgMonthly = midterm.salesYTD / months;
       const estFullYearSales = avgMonthly * 12;
@@ -980,7 +1121,6 @@
       $('#mid-est-net-core').textContent = toFa(estNetCore);
       $('#mid-est-net-final').textContent = toFa(estNetFinal);
       
-      // Sales Trend Analysis
       const prevFiscalYear = String(parseInt(currentFiscalYear) - 1);
       const prevYearSales = monthlySalesData[prevFiscalYear] || Array(12).fill(0);
       
@@ -1036,12 +1176,19 @@
       const cogsProj = lastProjections[0]?.cogs || 0;
       $('#profitMargin').textContent = salesProj > 0 ? toFa((netProfitY1 / salesProj) * 100, 1) : '0';
       $('#dso').textContent = toFa(salesProj > 0 ? (baseBS.accountsReceivable / salesProj) * 365 : 0);
-      const avgInv = (baseBS.inventoryBeginning + baseBS.inventoryEnding) / 2;
-      $('#inventoryDays').textContent = toFa(cogsProj > 0 ? (avgInv / cogsProj) * 365 : 0);
+      const beginningInventoryProj = baseBS.inventoryEnding || 0;
+      $('#inventoryDays').textContent = toFa(cogsProj > 0 ? (beginningInventoryProj / cogsProj) * 365 : 0);
       const assets = baseBS.totalAssets || 0;
       $('#debtAssetRatio').textContent = assets > 0 ? toFa((baseBS.totalDebt / assets)*100, 1) : '0';
       const receivables = baseBS.accountsReceivable || 0;
       $('#receivablesAssetRatio').textContent = assets > 0 ? toFa((receivables / assets) * 100, 1) : '0';
+      
+      // START: New KPI Calculation
+      const totalUnitsY1 = calculateTotalBaseUnits();
+      const cogsPerUnit = totalUnitsY1 > 0 ? (cogsProj * 1000000) / totalUnitsY1 : 0;
+      const cogsPerUnitEl = $('#cogsPerUnit');
+      if(cogsPerUnitEl) cogsPerUnitEl.textContent = toFa(cogsPerUnit, 0);
+      // END: New KPI Calculation
     }
 
     // -------- Export Helpers --------
@@ -1078,6 +1225,7 @@
       renderProjectionAndKPIs();
       if(!$('#ratios').hasAttribute('hidden')) renderRatiosTab();
       if(!$('#midterm').hasAttribute('hidden')) computeMidtermAndSalesAnalysis();
+      updateTableFooters(); // Update footers on every model run
     }, 80);
 
     function renderAll(){
@@ -1091,6 +1239,7 @@
       renderInventory();
       renderOthers();
       renderMonthlySales();
+      updateTableFooters(); // Initial footer render
     }
 
     // -------- Events --------
@@ -1106,7 +1255,7 @@
 
       if(t.closest('#historical')){
         const i = t.dataset.i, f = t.dataset.f;
-        if (f === 'year') { historicalData[i].year = t.value; renderHistoricalBalance(); }
+        if (f === 'year') { historicalData[i].year = t.value; renderHistoricalBalance(); runModel(); }
         else { 
             historicalData[i].values[f] = num(t.value);
             const updatedPnl = calculatePnl(historicalData[i].values);
@@ -1120,8 +1269,9 @@
                     }
                 }
             });
+            runModel();
         }
-        runModel(); return;
+        return;
       }
       if(t.closest('#historicalBalance')){ const i=+t.dataset.i; const k=t.dataset.bsKey; historicalBalanceData[i][k]=num(t.value); runModel(); return; }
       const k = t.dataset.k;
@@ -1130,7 +1280,13 @@
       if(t.closest('#labor')){ const i=+t.dataset.i; directLaborData[i][k] = k==='name'?t.value:num(t.value); runModel(); return; }
       if(t.closest('#overhead')){ const i=+t.dataset.i; overheadData[i][k] = k==='name'?t.value:num(t.value); runModel(); return; }
       if(t.closest('#inventory')){ inventoryData[k] = num(t.value); runModel(); return; }
-      if(t.closest('#others')){ const id=t.dataset.id; const it=otherProjectionsData.find(x=>x.id===d.id); it[k]=num(t.value); runModel(); return; }
+      if(t.closest('#others')){ 
+          const id = t.dataset.id;
+          const it = otherProjectionsData.find(x => x.id === id);
+          if (it) it[k] = num(t.value);
+          runModel(); 
+          return; 
+      }
       
       if(t.closest('#monthlySalesContainer')){
           const year = t.dataset.year;
@@ -1159,6 +1315,65 @@
         });
         renderHistorical(); runModel(); notify('اطلاعات با موفقیت از کلیپ‌بورد دریافت شد.');
       }catch(err){ console.error(err); notify('خطا در دریافت اطلاعات از کلیپ‌بورد.','err') }
+    };
+     $('#pasteBsData').onclick = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            const rows = text.trim().split(/[\r\n]+/).map(row => row.split('\t'));
+            if (rows.length !== historicalBalanceTemplate.length) {
+                return notify(`تعداد ردیف‌های کپی شده (${rows.length}) با جدول ترازنامه (${historicalBalanceTemplate.length}) مطابقت ندارد.`, 'err');
+            }
+            rows.forEach((row, rowIndex) => {
+                const itemKey = historicalBalanceTemplate[rowIndex].key;
+                row.forEach((cell, colIndex) => {
+                    if (historicalBalanceData[colIndex]) {
+                        historicalBalanceData[colIndex][itemKey] = num(cell);
+                    }
+                });
+            });
+            renderHistoricalBalance();
+            runModel();
+            notify('داده‌های ترازنامه با موفقیت جای‌گذاری شد.');
+        } catch (err) {
+            console.error(err);
+            notify('خطا در دریافت اطلاعات از کلیپ‌بورد.', 'err');
+        }
+    };
+    $('#pasteMonthlySalesData').onclick = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            const rows = text.trim().split(/[\r\n]+/).map(row => row.split('\t'));
+            const yearsInTable = Object.keys(monthlySalesData).sort((a,b) => a.localeCompare(b));
+
+            if (rows.length !== 12) {
+                return notify(`تعداد ماه‌های کپی شده (${rows.length}) باید ۱۲ باشد.`, 'err');
+            }
+            if (rows[0].length -1 !== yearsInTable.length) {
+                 return notify(`تعداد سال‌های کپی شده (${rows[0].length -1}) با جدول (${yearsInTable.length}) مطابقت ندارد.`, 'err');
+            }
+
+            const fiscalMonths = [...PERSIAN_MONTHS.slice(fiscalYearStartMonth - 1), ...PERSIAN_MONTHS.slice(0, fiscalYearStartMonth - 1)];
+            
+            rows.forEach((row, fiscalIndex) => {
+                const monthName = row[0];
+                const originalMonthIndex = PERSIAN_MONTHS.indexOf(monthName);
+                if(originalMonthIndex === -1) return;
+
+                row.slice(1).forEach((cell, yearIndex) => {
+                    const year = yearsInTable[yearIndex];
+                    if(year) {
+                       monthlySalesData[year][originalMonthIndex] = num(cell);
+                    }
+                });
+            });
+            
+            renderMonthlySales();
+            runModel();
+            notify('داده‌های فروش ماهانه با موفقیت جای‌گذاری شد.');
+        } catch (err) {
+            console.error(err);
+            notify('خطا در دریافت اطلاعات فروش ماهانه.', 'err');
+        }
     };
     $('#addYear').onclick = ()=>{ const last = historicalData.at(-1); const y = last? parseInt(toEn(last.year))+1 : 1400; const vals={}; pnlTemplate.forEach(i=>{ if(i.editable) vals[i.id]=0 }); historicalData.push({year:String(y), values:vals}); renderHistorical(); renderHistoricalBalance(); runModel(); };
     $('#removeYear').onclick = ()=>{ if(historicalData.length>1){ historicalData.pop(); renderHistorical(); renderHistoricalBalance(); runModel(); } };
